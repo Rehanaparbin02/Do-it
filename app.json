@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "Do-It",
+    "scheme": "do-it",
     "slug": "Do-It",
     "version": "1.0.0",
     "orientation": "portrait",
