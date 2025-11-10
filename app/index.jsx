@@ -1,27 +1,31 @@
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
-// Import your screens
+// Screens
 import Login from './components/Login';
 import SignupScreen from './components/SignupScreen';
 import ForgotPassword from './components/ForgotPassword';
 import ResetPassword from './components/ResetPassword';
 import Home from './components/Home';
 
+// Custom Alert Provider
+// import { CustomAlertProvider } from './components/CustomAlert';
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-      <Stack.Navigator
-        initialRouteName="Login"
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen name="Login" component={Login} />
-        <Stack.Screen name="Signup" component={SignupScreen} />
-        <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-        <Stack.Screen name="ResetPassword" component={ResetPassword} />
-        <Stack.Screen name="Home" component={Home} />
-      </Stack.Navigator>
+    // <CustomAlertProvider>
+        <Stack.Navigator
+          initialRouteName="Login"
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
+          <Stack.Screen name="Login" component={Login} />
+          <Stack.Screen name="Signup" component={SignupScreen} />
+          <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+          <Stack.Screen name="ResetPassword" component={ResetPassword} />
+          <Stack.Screen name="Home" component={Home} />
+        </Stack.Navigator>
+    // </CustomAlertProvider>
   );
 }

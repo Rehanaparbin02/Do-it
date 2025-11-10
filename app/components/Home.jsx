@@ -1,43 +1,973 @@
-import React, { useEffect, useState } from 'react';
+// import React, { useEffect, useState } from "react";
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   FlatList,
+//   TouchableOpacity,
+//   StyleSheet,
+//   ActivityIndicator,
+//   StatusBar,
+//   Animated,
+//   Easing,
+//   Modal,
+//   ScrollView,
+//   Image,
+// } from "react-native";
+// import * as ImagePicker from "expo-image-picker";
+// import * as DocumentPicker from "expo-document-picker";
+// import { supabase } from "../lib/supabaseClient";
+// import { CustomAlert } from "../components/CustomAlert";
+
+// export default function Home({ navigation }) {
+//   const [notes, setNotes] = useState([]);
+//   const [title, setTitle] = useState("");
+//   const [content, setContent] = useState("");
+//   const [loading, setLoading] = useState(false);
+//   const [user, setUser] = useState(null);
+//   const [editingNoteId, setEditingNoteId] = useState(null);
+//   const [selectedNote, setSelectedNote] = useState(null);
+//   const [attachments, setAttachments] = useState({
+//     photo: [],
+//     video: [],
+//     pdf: [],
+//     audio: [],
+//   });
+//   const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+//   const fadeAnim = useState(new Animated.Value(0))[0];
+
+//   useEffect(() => {
+//     let isMounted = true;
+//     const init = async () => {
+//       const { data, error } = await supabase.auth.getSession();
+//       if (error) console.error("Session Error:", error);
+//       if (data?.session?.user && isMounted) {
+//         setUser(data.session.user);
+//         fetchNotes(data.session.user.id);
+//       } else if (isMounted) {
+//         fetchNotes(null);
+//       }
+//     };
+//     init();
+
+//     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+//       if (session?.user) {
+//         setUser(session.user);
+//         fetchNotes(session.user.id);
+//       } else {
+//         fetchNotes(null);
+//       }
+//     });
+
+//     Animated.timing(fadeAnim, {
+//       toValue: 1,
+//       duration: 700,
+//       easing: Easing.out(Easing.exp),
+//       useNativeDriver: true,
+//     }).start();
+
+//     return () => {
+//       isMounted = false;
+//       listener.subscription.unsubscribe();
+//     };
+//   }, []);
+
+//   const fetchNotes = async (userId) => {
+//     setLoading(true);
+//     let query = supabase
+//       .from("notes")
+//       .select("*")
+//       .order("created_at", { ascending: false });
+
+//     if (userId) query = query.eq("user_id", userId);
+//     else query = query.is("user_id", null);
+
+//     const { data, error } = await query;
+//     if (error) CustomAlert.alert("Error", error.message, [{ text: "OK" }]);
+//     else setNotes(data);
+//     setLoading(false);
+//   };
+
+//   const handleSave = async () => {
+//     if (!title.trim()) {
+//       CustomAlert.alert("Validation", "Title cannot be empty.", [{ text: "OK" }]);
+//       return;
+//     }
+
+//     try {
+//       setLoading(true);
+      
+//       // Convert file data to just URIs for database storage
+//       const mediaPayload = {
+//         media_photo: attachments.photo.map(f => typeof f === 'string' ? f : f.uri),
+//         media_video: attachments.video.map(f => typeof f === 'string' ? f : f.uri),
+//         media_pdf: attachments.pdf.map(f => typeof f === 'string' ? f : f.uri),
+//         media_audio: attachments.audio.map(f => typeof f === 'string' ? f : f.uri),
+//       };
+
+//       if (editingNoteId) {
+//         const updateData = { title, content, updated_at: new Date(), ...mediaPayload };
+//         let query = supabase.from("notes").update(updateData).eq("id", editingNoteId);
+//         if (user) query = query.eq("user_id", user.id);
+//         else query = query.is("user_id", null);
+        
+//         const { error } = await query;
+//         if (error) throw error;
+//         CustomAlert.alert("Success", "Note updated successfully.", [{ text: "OK" }]);
+//       } else {
+//         const { error } = await supabase
+//           .from("notes")
+//           .insert([{ user_id: user?.id || null, title, content, completed: false, ...mediaPayload }]);
+//         if (error) throw error;
+//         CustomAlert.alert("Success", "Note added successfully.", [{ text: "OK" }]);
+//       }
+
+//       resetForm();
+//       fetchNotes(user?.id);
+//     } catch (err) {
+//       CustomAlert.alert("Error", err.message, [{ text: "OK" }]);
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const toggleComplete = async (noteId, currentStatus) => {
+//     try {
+//       const { error } = await supabase
+//         .from("notes")
+//         .update({ completed: !currentStatus, updated_at: new Date() })
+//         .eq("id", noteId);
+//       if (error) throw error;
+//       fetchNotes(user?.id);
+//     } catch (err) {
+//       CustomAlert.alert("Error", err.message, [{ text: "OK" }]);
+//     }
+//   };
+
+//   const handleDelete = async (noteId) => {
+//     CustomAlert.alert("Delete Note", "Are you sure you want to delete this note?", [
+//       { text: "Cancel", style: "cancel" },
+//       {
+//         text: "Delete",
+//         style: "destructive",
+//         onPress: async () => {
+//           try {
+//             let query = supabase.from("notes").delete().eq("id", noteId);
+//             if (user) query = query.eq("user_id", user.id);
+//             else query = query.is("user_id", null);
+            
+//             const { error } = await query;
+//             if (error) throw error;
+            
+//             CustomAlert.alert("Success", "Note deleted successfully.", [{ text: "OK" }]);
+//             fetchNotes(user?.id);
+//             setSelectedNote(null);
+//           } catch (err) {
+//             CustomAlert.alert("Error", err.message, [{ text: "OK" }]);
+//           }
+//         },
+//       },
+//     ]);
+//   };
+
+//   const handleAttachment = async (type) => {
+//     setShowAttachmentModal(false);
+    
+//     try {
+//       let fileUri = null;
+//       let fileName = null;
+
+//       if (type === "image") {
+//         const res = await ImagePicker.launchImageLibraryAsync({
+//           mediaTypes: ImagePicker.MediaTypeOptions.Images,
+//           allowsEditing: true,
+//           quality: 0.8,
+//         });
+
+//         if (!res.canceled && res.assets && res.assets.length > 0) {
+//           fileUri = res.assets[0].uri;
+//           fileName = res.assets[0].fileName || `image_${Date.now()}.jpg`;
+//         }
+//       } else if (type === "video") {
+//         const res = await ImagePicker.launchImageLibraryAsync({
+//           mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+//           allowsEditing: true,
+//           quality: 0.8,
+//         });
+
+//         if (!res.canceled && res.assets && res.assets.length > 0) {
+//           fileUri = res.assets[0].uri;
+//           fileName = res.assets[0].fileName || `video_${Date.now()}.mp4`;
+//         }
+//       } else if (type === "document") {
+//         const res = await DocumentPicker.getDocumentAsync({
+//           type: "application/pdf",
+//           copyToCacheDirectory: true,
+//         });
+
+//         if (res.type === "success") {
+//           fileUri = res.uri;
+//           fileName = res.name || `document_${Date.now()}.pdf`;
+//         }
+//       } else if (type === "audio") {
+//         const res = await DocumentPicker.getDocumentAsync({
+//           type: "audio/*",
+//           copyToCacheDirectory: true,
+//         });
+
+//         if (res.type === "success") {
+//           fileUri = res.uri;
+//           fileName = res.name || `audio_${Date.now()}.mp3`;
+//         }
+//       }
+
+//       if (fileUri) {
+//         const fileData = { uri: fileUri, name: fileName };
+        
+//         // Map type to the correct attachment key
+//         const attachmentKey = type === "image" ? "photo" : type === "document" ? "pdf" : type;
+        
+//         setAttachments((prev) => ({
+//           ...prev,
+//           [attachmentKey]: [...prev[attachmentKey], fileData],
+//         }));
+
+//         CustomAlert.alert("Success", `✅ ${type} attached successfully!`, [
+//           { text: "OK" },
+//         ]);
+//       } else {
+//         CustomAlert.alert("Cancelled", "No file selected.", [{ text: "OK" }]);
+//       }
+//     } catch (err) {
+//       CustomAlert.alert("Error", err.message, [{ text: "OK" }]);
+//     }
+//   };
+
+//   const resetForm = () => {
+//     setTitle("");
+//     setContent("");
+//     setEditingNoteId(null);
+//     setAttachments({ photo: [], video: [], pdf: [], audio: [] });
+//   };
+
+//   const handleLogout = async () => {
+//     CustomAlert.alert("Logout", "Are you sure you want to logout?", [
+//       { text: "Cancel", style: "cancel" },
+//       {
+//         text: "Logout",
+//         style: "destructive",
+//         onPress: async () => {
+//           await supabase.auth.signOut();
+//           setUser(null);
+//           setNotes([]);
+//           navigation.replace("Login");
+//         },
+//       },
+//     ]);
+//   };
+
+//   const formatDate = (dateString) => {
+//     const date = new Date(dateString);
+//     return date.toLocaleString('en-US', {
+//       year: 'numeric',
+//       month: 'short',
+//       day: 'numeric',
+//       hour: '2-digit',
+//       minute: '2-digit',
+//       hour12: true
+//     });
+//   };
+
+//   const renderMediaInfo = (note) => {
+//     const mediaCount = {
+//       photos: note.media_photo?.length || 0,
+//       videos: note.media_video?.length || 0,
+//       pdfs: note.media_pdf?.length || 0,
+//       audio: note.media_audio?.length || 0,
+//     };
+
+//     const total = Object.values(mediaCount).reduce((a, b) => a + b, 0);
+//     if (total === 0) return null;
+
+//     return (
+//       <View style={styles.mediaSection}>
+//         <Text style={styles.mediaSectionTitle}>Attachments ({total})</Text>
+        
+//         {/* Photos */}
+//         {mediaCount.photos > 0 && (
+//           <View>
+//             <Text style={styles.mediaItem}>📷 Photos: {mediaCount.photos}</Text>
+//             <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mediaGallery}>
+//               {note.media_photo.map((uri, index) => (
+//                 <Image
+//                   key={index}
+//                   source={{ uri }}
+//                   style={styles.mediaThumbnail}
+//                   resizeMode="cover"
+//                 />
+//               ))}
+//             </ScrollView>
+//           </View>
+//         )}
+        
+//         {mediaCount.videos > 0 && (
+//           <View style={styles.mediaItemContainer}>
+//             <Text style={styles.mediaItem}>🎥 Videos: {mediaCount.videos}</Text>
+//             <View style={styles.fileList}>
+//               {note.media_video.map((uri, index) => (
+//                 <Text key={index} style={styles.fileName} numberOfLines={1}>
+//                   • Video {index + 1}
+//                 </Text>
+//               ))}
+//             </View>
+//           </View>
+//         )}
+        
+//         {mediaCount.pdfs > 0 && (
+//           <View style={styles.mediaItemContainer}>
+//             <Text style={styles.mediaItem}>📄 PDFs: {mediaCount.pdfs}</Text>
+//             <View style={styles.fileList}>
+//               {note.media_pdf.map((uri, index) => (
+//                 <Text key={index} style={styles.fileName} numberOfLines={1}>
+//                   • PDF {index + 1}
+//                 </Text>
+//               ))}
+//             </View>
+//           </View>
+//         )}
+        
+//         {mediaCount.audio > 0 && (
+//           <View style={styles.mediaItemContainer}>
+//             <Text style={styles.mediaItem}>🎙️ Audio: {mediaCount.audio}</Text>
+//             <View style={styles.fileList}>
+//               {note.media_audio.map((uri, index) => (
+//                 <Text key={index} style={styles.fileName} numberOfLines={1}>
+//                   • Audio {index + 1}
+//                 </Text>
+//               ))}
+//             </View>
+//           </View>
+//         )}
+//       </View>
+//     );
+//   };
+
+//   return (
+//     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+//       <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
+
+//       {/* Header */}
+//       <View style={styles.header}>
+//         <Text style={styles.headerTitle}>Do-It</Text>
+//         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+//           <Text style={styles.logoutText}>Logout</Text>
+//         </TouchableOpacity>
+//       </View>
+
+//       {/* Note Form */}
+//       <View style={styles.formCard}>
+//         <Text style={styles.sectionTitle}>
+//           {editingNoteId ? "Edit Note" : "New Note"}
+//         </Text>
+//         <TextInput
+//           style={styles.input}
+//           placeholder="Title"
+//           placeholderTextColor="#999"
+//           value={title}
+//           onChangeText={setTitle}
+//         />
+//         <TextInput
+//           style={[styles.input, styles.multiline]}
+//           placeholder="Write something..."
+//           placeholderTextColor="#999"
+//           value={content}
+//           multiline
+//           onChangeText={setContent}
+//         />
+
+//         <TouchableOpacity
+//           activeOpacity={0.8}
+//           style={styles.attachButton}
+//           onPress={() => setShowAttachmentModal(true)}
+//         >
+//           <Text style={styles.attachText}>📎 Add Attachment</Text>
+//         </TouchableOpacity>
+
+//         {/* Show current attachments count */}
+//         {(attachments.photo.length > 0 ||
+//           attachments.video.length > 0 ||
+//           attachments.pdf.length > 0 ||
+//           attachments.audio.length > 0) && (
+//           <View style={styles.attachmentPreview}>
+//             <Text style={styles.attachmentText}>
+//               {attachments.photo.length > 0 && `📷 ${attachments.photo.length} `}
+//               {attachments.video.length > 0 && `🎥 ${attachments.video.length} `}
+//               {attachments.pdf.length > 0 && `📄 ${attachments.pdf.length} `}
+//               {attachments.audio.length > 0 && `🎙️ ${attachments.audio.length}`}
+//             </Text>
+//           </View>
+//         )}
+
+//         <TouchableOpacity
+//           style={[styles.saveButton, loading && { opacity: 0.6 }]}
+//           onPress={handleSave}
+//           disabled={loading}
+//         >
+//           {loading ? (
+//             <ActivityIndicator color="#fff" size="small" />
+//           ) : (
+//             <Text style={styles.saveButtonText}>
+//               {editingNoteId ? "Update" : "Add Note"}
+//             </Text>
+//           )}
+//         </TouchableOpacity>
+//       </View>
+
+//       {/* Attachment Modal */}
+//       <Modal visible={showAttachmentModal} transparent animationType="fade">
+//         <View style={styles.attachmentModalOverlay}>
+//           <View style={styles.attachmentModalCard}>
+//             <Text style={styles.attachmentModalTitle}>Add Attachment</Text>
+//             <Text style={styles.attachmentModalSubtitle}>Choose file type</Text>
+            
+//             <TouchableOpacity
+//               style={styles.attachmentOption}
+//               onPress={() => handleAttachment("document")}
+//             >
+//               <Text style={styles.attachmentOptionIcon}>📄</Text>
+//               <Text style={styles.attachmentOptionText}>Document</Text>
+//             </TouchableOpacity>
+
+//             <TouchableOpacity
+//               style={styles.attachmentOption}
+//               onPress={() => handleAttachment("image")}
+//             >
+//               <Text style={styles.attachmentOptionIcon}>🖼️</Text>
+//               <Text style={styles.attachmentOptionText}>Image</Text>
+//             </TouchableOpacity>
+
+//             <TouchableOpacity
+//               style={styles.attachmentOption}
+//               onPress={() => handleAttachment("video")}
+//             >
+//               <Text style={styles.attachmentOptionIcon}>🎥</Text>
+//               <Text style={styles.attachmentOptionText}>Video</Text>
+//             </TouchableOpacity>
+
+//             <TouchableOpacity
+//               style={styles.attachmentOption}
+//               onPress={() => handleAttachment("audio")}
+//             >
+//               <Text style={styles.attachmentOptionIcon}>🎙️</Text>
+//               <Text style={styles.attachmentOptionText}>Audio</Text>
+//             </TouchableOpacity>
+
+//             <TouchableOpacity
+//               style={styles.attachmentModalCancel}
+//               onPress={() => setShowAttachmentModal(false)}
+//             >
+//               <Text style={styles.attachmentModalCancelText}>Cancel</Text>
+//             </TouchableOpacity>
+//           </View>
+//         </View>
+//       </Modal>
+
+//       {/* Notes List */}
+//       {loading && notes.length === 0 ? (
+//         <View style={styles.centered}>
+//           <ActivityIndicator size="large" color="#22c55e" />
+//         </View>
+//       ) : (
+//         <FlatList
+//           data={notes}
+//           keyExtractor={(item) => item.id}
+//           showsVerticalScrollIndicator={false}
+//           renderItem={({ item }) => (
+//             <TouchableOpacity
+//               activeOpacity={0.9}
+//               style={[styles.noteCard, item.completed && styles.completedCard]}
+//               onPress={() => setSelectedNote(item)}
+//             >
+//               <View style={styles.noteRow}>
+//                 <TouchableOpacity
+//                   onPress={() => toggleComplete(item.id, item.completed)}
+//                   style={[styles.checkbox, item.completed && styles.checkboxChecked]}
+//                 >
+//                   {item.completed && <Text style={styles.checkmark}>✓</Text>}
+//                 </TouchableOpacity>
+//                 <View style={{ flex: 1 }}>
+//                   <Text
+//                     style={[
+//                       styles.noteTitle,
+//                       item.completed && styles.noteCompleted,
+//                     ]}
+//                   >
+//                     {item.title}
+//                   </Text>
+//                   <Text
+//                     style={[
+//                       styles.noteContent,
+//                       item.completed && styles.noteCompleted,
+//                     ]}
+//                     numberOfLines={2}
+//                   >
+//                     {item.content}
+//                   </Text>
+//                 </View>
+//               </View>
+//             </TouchableOpacity>
+//           )}
+//         />
+//       )}
+
+//       {/* Modal */}
+//       <Modal visible={!!selectedNote} transparent animationType="fade">
+//         <View style={styles.modalOverlay}>
+//           <View style={styles.modalCard}>
+//             <ScrollView 
+//               showsVerticalScrollIndicator={false}
+//               style={styles.modalScrollView}
+//               contentContainerStyle={styles.modalScrollContent}
+//             >
+//               <Text style={styles.modalTitle}>{selectedNote?.title}</Text>
+              
+//               <ScrollView 
+//                 style={styles.contentScrollView}
+//                 nestedScrollEnabled={true}
+//               >
+//                 <Text style={styles.modalContent}>{selectedNote?.content}</Text>
+//               </ScrollView>
+              
+//               {/* Status Badge */}
+//               <View style={styles.statusBadge}>
+//                 <Text style={styles.statusText}>
+//                   {selectedNote?.completed ? "✓ Completed" : "⏱️ In Progress"}
+//                 </Text>
+//               </View>
+
+//               {/* Media Information */}
+//               {selectedNote && renderMediaInfo(selectedNote)}
+
+//               {/* Timestamps */}
+//               <View style={styles.timestampSection}>
+//                 <View style={styles.timestampRow}>
+//                   <Text style={styles.timestampLabel}>Created:</Text>
+//                   <Text style={styles.timestampValue}>
+//                     {selectedNote?.created_at && formatDate(selectedNote.created_at)}
+//                   </Text>
+//                 </View>
+//                 <View style={styles.timestampRow}>
+//                   <Text style={styles.timestampLabel}>Updated:</Text>
+//                   <Text style={styles.timestampValue}>
+//                     {selectedNote?.updated_at && formatDate(selectedNote.updated_at)}
+//                   </Text>
+//                 </View>
+//               </View>
+
+//               {/* Action Buttons */}
+//               <View style={styles.modalActions}>
+//                 <TouchableOpacity
+//                   style={[styles.modalButton, { backgroundColor: "#22c55e" }]}
+//                   onPress={() => {
+//                     setTitle(selectedNote.title);
+//                     setContent(selectedNote.content);
+//                     setEditingNoteId(selectedNote.id);
+//                     setAttachments({
+//                       photo: selectedNote.media_photo || [],
+//                       video: selectedNote.media_video || [],
+//                       pdf: selectedNote.media_pdf || [],
+//                       audio: selectedNote.media_audio || [],
+//                     });
+//                     setSelectedNote(null);
+//                   }}
+//                 >
+//                   <Text style={styles.modalButtonText}>✏️ Edit</Text>
+//                 </TouchableOpacity>
+//                 <TouchableOpacity
+//                   style={[styles.modalButton, { backgroundColor: "#ef4444" }]}
+//                   onPress={() => handleDelete(selectedNote.id)}
+//                 >
+//                   <Text style={styles.modalButtonText}>🗑️ Delete</Text>
+//                 </TouchableOpacity>
+//               </View>
+
+//               <TouchableOpacity
+//                 style={styles.modalClose}
+//                 onPress={() => setSelectedNote(null)}
+//               >
+//                 <Text style={styles.closeText}>Close</Text>
+//               </TouchableOpacity>
+//             </ScrollView>
+//           </View>
+//         </View>
+//       </Modal>
+//     </Animated.View>
+//   );
+// }
+
+// const styles = StyleSheet.create({
+//   container: { flex: 1, backgroundColor: "#0a0a0a", padding: 20, paddingTop: 50 },
+//   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16 },
+//   headerTitle: { color: "#fff", fontSize: 28, fontWeight: "700" },
+//   logoutButton: {
+//     backgroundColor: "rgba(255,255,255,0.1)",
+//     borderRadius: 8,
+//     paddingHorizontal: 14,
+//     paddingVertical: 8,
+//   },
+//   logoutText: { color: "#ff6b6b", fontWeight: "600" },
+//   formCard: {
+//     backgroundColor: "rgba(255,255,255,0.05)",
+//     borderRadius: 16,
+//     padding: 18,
+//     marginBottom: 20,
+//     shadowColor: "#000",
+//     shadowOpacity: 0.25,
+//     shadowRadius: 10,
+//   },
+//   sectionTitle: { color: "#fff", fontWeight: "600", fontSize: 18, marginBottom: 12 },
+//   input: {
+//     backgroundColor: "rgba(255,255,255,0.07)",
+//     color: "#fff",
+//     borderRadius: 10,
+//     padding: 14,
+//     marginBottom: 10,
+//     fontSize: 16,
+//   },
+//   multiline: { height: 100, textAlignVertical: "top" },
+//   attachButton: {
+//     backgroundColor: "rgba(255,255,255,0.08)",
+//     borderRadius: 12,
+//     paddingVertical: 14,
+//     alignItems: "center",
+//     marginBottom: 12,
+//     borderWidth: 1,
+//     borderColor: "rgba(255,255,255,0.1)",
+//   },
+//   attachText: {
+//     color: "#ddd",
+//     fontSize: 16,
+//     fontWeight: "500",
+//     letterSpacing: 0.3,
+//   },
+//   attachmentPreview: {
+//     backgroundColor: "rgba(34,197,94,0.1)",
+//     borderRadius: 8,
+//     padding: 10,
+//     marginBottom: 12,
+//     borderWidth: 1,
+//     borderColor: "rgba(34,197,94,0.3)",
+//   },
+//   attachmentText: {
+//     color: "#22c55e",
+//     fontSize: 14,
+//     textAlign: "center",
+//   },
+//   saveButton: {
+//     backgroundColor: "#22c55e",
+//     borderRadius: 12,
+//     paddingVertical: 12,
+//     alignItems: "center",
+//   },
+//   saveButtonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+//   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+//   noteCard: {
+//     backgroundColor: "rgba(255,255,255,0.04)",
+//     borderRadius: 14,
+//     padding: 16,
+//     marginBottom: 12,
+//     borderWidth: 1,
+//     borderColor: "rgba(255,255,255,0.07)",
+//     shadowColor: "#000",
+//     shadowOpacity: 0.2,
+//     shadowRadius: 8,
+//   },
+//   completedCard: { opacity: 0.5 },
+//   noteRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+//   checkbox: {
+//     width: 24,
+//     height: 24,
+//     borderRadius: 6,
+//     borderWidth: 1.5,
+//     borderColor: "#666",
+//     alignItems: "center",
+//     justifyContent: "center",
+//   },
+//   checkboxChecked: { backgroundColor: "#22c55e", borderColor: "#22c55e" },
+//   checkmark: { color: "#fff", fontWeight: "700" },
+//   noteTitle: { color: "#fff", fontSize: 17, fontWeight: "600" },
+//   noteContent: { color: "#999", fontSize: 14, marginTop: 2 },
+//   noteCompleted: { textDecorationLine: "line-through", color: "#666" },
+//   modalOverlay: {
+//     flex: 1,
+//     backgroundColor: "rgba(0,0,0,0.85)",
+//     justifyContent: "center",
+//     alignItems: "center",
+//     padding: 20,
+//   },
+//   modalCard: {
+//     backgroundColor: "rgba(20,20,20,0.98)",
+//     borderRadius: 20,
+//     width: "100%",
+//     maxHeight: "85%",
+//     borderWidth: 1,
+//     borderColor: "#333",
+//   },
+//   modalScrollView: {
+//     maxHeight: "100%",
+//   },
+//   modalScrollContent: {
+//     padding: 24,
+//   },
+//   contentScrollView: {
+//     maxHeight: 200,
+//     marginBottom: 16,
+//   },
+//   modalTitle: { 
+//     color: "#fff", 
+//     fontSize: 22, 
+//     fontWeight: "700", 
+//     marginBottom: 12,
+//     textAlign: "center"
+//   },
+//   modalContent: { 
+//     color: "#bbb", 
+//     fontSize: 16,
+//     lineHeight: 24,
+//   },
+//   statusBadge: {
+//     backgroundColor: "rgba(34,197,94,0.15)",
+//     borderRadius: 8,
+//     paddingVertical: 8,
+//     paddingHorizontal: 12,
+//     alignSelf: "center",
+//     marginBottom: 16,
+//     borderWidth: 1,
+//     borderColor: "rgba(34,197,94,0.3)",
+//   },
+//   statusText: {
+//     color: "#22c55e",
+//     fontSize: 14,
+//     fontWeight: "600",
+//   },
+//   mediaSection: {
+//     backgroundColor: "rgba(255,255,255,0.03)",
+//     borderRadius: 12,
+//     padding: 14,
+//     marginBottom: 16,
+//     borderWidth: 1,
+//     borderColor: "rgba(255,255,255,0.1)",
+//   },
+//   mediaSectionTitle: {
+//     color: "#fff",
+//     fontSize: 15,
+//     fontWeight: "600",
+//     marginBottom: 8,
+//   },
+//   mediaItem: {
+//     color: "#999",
+//     fontSize: 14,
+//     marginVertical: 6,
+//     fontWeight: "600",
+//   },
+//   mediaItemContainer: {
+//     marginVertical: 6,
+//   },
+//   mediaGallery: {
+//     flexDirection: "row",
+//     marginTop: 8,
+//     marginBottom: 8,
+//   },
+//   mediaThumbnail: {
+//     width: 80,
+//     height: 80,
+//     borderRadius: 8,
+//     marginRight: 8,
+//     backgroundColor: "rgba(255,255,255,0.05)",
+//     borderWidth: 1,
+//     borderColor: "rgba(255,255,255,0.1)",
+//   },
+//   fileList: {
+//     marginTop: 4,
+//     marginLeft: 8,
+//   },
+//   fileName: {
+//     color: "#777",
+//     fontSize: 12,
+//     marginVertical: 2,
+//   },
+//   timestampSection: {
+//     backgroundColor: "rgba(255,255,255,0.03)",
+//     borderRadius: 12,
+//     padding: 14,
+//     marginBottom: 20,
+//     borderWidth: 1,
+//     borderColor: "rgba(255,255,255,0.1)",
+//   },
+//   timestampRow: {
+//     flexDirection: "row",
+//     justifyContent: "space-between",
+//     marginVertical: 4,
+//   },
+//   timestampLabel: {
+//     color: "#888",
+//     fontSize: 14,
+//     fontWeight: "500",
+//   },
+//   timestampValue: {
+//     color: "#bbb",
+//     fontSize: 14,
+//   },
+//   modalActions: { 
+//     flexDirection: "row", 
+//     justifyContent: "space-between", 
+//     gap: 12,
+//     marginBottom: 16,
+//   },
+//   modalButton: { 
+//     flex: 1,
+//     borderRadius: 12, 
+//     paddingVertical: 14, 
+//     alignItems: "center",
+//     shadowColor: "#000",
+//     shadowOpacity: 0.3,
+//     shadowRadius: 6,
+//   },
+//   modalButtonText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+//   modalClose: {
+//     alignSelf: "center",
+//     backgroundColor: "rgba(255,255,255,0.08)",
+//     paddingHorizontal: 32,
+//     paddingVertical: 12,
+//     borderRadius: 10,
+//     borderWidth: 1,
+//     borderColor: "rgba(255,255,255,0.1)",
+//   },
+//   closeText: { color: "#aaa", fontWeight: "600", fontSize: 15 },
+//   attachmentModalOverlay: {
+//     flex: 1,
+//     backgroundColor: "rgba(0,0,0,0.75)",
+//     justifyContent: "center",
+//     alignItems: "center",
+//   },
+//   attachmentModalCard: {
+//     backgroundColor: "rgba(20,20,20,0.98)",
+//     borderRadius: 20,
+//     padding: 24,
+//     width: "85%",
+//     borderWidth: 1,
+//     borderColor: "#333",
+//   },
+//   attachmentModalTitle: {
+//     color: "#fff",
+//     fontSize: 22,
+//     fontWeight: "700",
+//     textAlign: "center",
+//     marginBottom: 8,
+//   },
+//   attachmentModalSubtitle: {
+//     color: "#999",
+//     fontSize: 14,
+//     textAlign: "center",
+//     marginBottom: 24,
+//   },
+//   attachmentOption: {
+//     flexDirection: "row",
+//     alignItems: "center",
+//     backgroundColor: "rgba(255,255,255,0.05)",
+//     borderRadius: 12,
+//     padding: 16,
+//     marginBottom: 12,
+//     borderWidth: 1,
+//     borderColor: "rgba(255,255,255,0.1)",
+//   },
+//   attachmentOptionIcon: {
+//     fontSize: 28,
+//     marginRight: 16,
+//   },
+//   attachmentOptionText: {
+//     color: "#fff",
+//     fontSize: 17,
+//     fontWeight: "600",
+//   },
+//   attachmentModalCancel: {
+//     backgroundColor: "rgba(255,255,255,0.08)",
+//     borderRadius: 12,
+//     padding: 16,
+//     marginTop: 8,
+//     borderWidth: 1,
+//     borderColor: "rgba(255,255,255,0.1)",
+//   },
+//   attachmentModalCancelText: {
+//     color: "#ff6b6b",
+//     fontSize: 16,
+//     fontWeight: "600",
+//     textAlign: "center",
+//   },
+// });
+
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   FlatList,
   TouchableOpacity,
-  Alert,
   StyleSheet,
   ActivityIndicator,
   StatusBar,
-} from 'react-native';
-import { supabase } from '../lib/supabaseClient';
+  Animated,
+  Easing,
+  Modal,
+  ScrollView,
+  Image,
+} from "react-native";
+import * as ImagePicker from "expo-image-picker";
+import * as DocumentPicker from "expo-document-picker";
+import { Audio } from 'expo-av';
+import { supabase } from "../lib/supabaseClient";
+import { CustomAlert } from "../components/CustomAlert";
 
 export default function Home({ navigation }) {
   const [notes, setNotes] = useState([]);
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
+  const [title, setTitle] = useState("");
+  const [content, setContent] = useState("");
   const [loading, setLoading] = useState(false);
   const [user, setUser] = useState(null);
   const [editingNoteId, setEditingNoteId] = useState(null);
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [attachments, setAttachments] = useState({
+    photo: [],
+    video: [],
+    pdf: [],
+    audio: [],
+  });
+  const [showAttachmentModal, setShowAttachmentModal] = useState(false);
+  const [showRecordingModal, setShowRecordingModal] = useState(false);
+  const [recording, setRecording] = useState(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const fadeAnim = useState(new Animated.Value(0))[0];
 
-  // ✅ Auth state + session persistence (without auto-redirect)
   useEffect(() => {
     let isMounted = true;
-
     const init = async () => {
-      const { data, error } = await supabase.auth.getSession();
-      if (error) console.error('Session Error:', error);
+      // Request audio permissions
+      await Audio.requestPermissionsAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
 
-      // Set user if session exists
+      const { data, error } = await supabase.auth.getSession();
+      if (error) console.error("Session Error:", error);
       if (data?.session?.user && isMounted) {
         setUser(data.session.user);
         fetchNotes(data.session.user.id);
       } else if (isMounted) {
-        // Fetch anonymous notes if not logged in
         fetchNotes(null);
       }
     };
-
     init();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -45,10 +975,16 @@ export default function Home({ navigation }) {
         setUser(session.user);
         fetchNotes(session.user.id);
       } else {
-        // Fetch anonymous notes when logged out
         fetchNotes(null);
       }
     });
+
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 700,
+      easing: Easing.out(Easing.exp),
+      useNativeDriver: true,
+    }).start();
 
     return () => {
       isMounted = false;
@@ -56,505 +992,1055 @@ export default function Home({ navigation }) {
     };
   }, []);
 
-  // ✅ Fetch user notes (or all notes if not logged in)
+  // Update recording duration every second
+  useEffect(() => {
+    let interval;
+    if (isRecording) {
+      interval = setInterval(() => {
+        setRecordingDuration((prev) => prev + 1);
+      }, 1000);
+    } else {
+      setRecordingDuration(0);
+    }
+    return () => clearInterval(interval);
+  }, [isRecording]);
+
   const fetchNotes = async (userId) => {
     setLoading(true);
     let query = supabase
-      .from('notes')
-      .select('*')
-      .order('completed', { ascending: true })
-      .order('created_at', { ascending: false });
-    
-    // If logged in, only show user's notes
-    // If not logged in, show all notes with null user_id (anonymous notes)
-    if (userId) {
-      query = query.eq('user_id', userId);
-    } else {
-      query = query.is('user_id', null);
-    }
-    
+      .from("notes")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (userId) query = query.eq("user_id", userId);
+    else query = query.is("user_id", null);
+
     const { data, error } = await query;
-    
-    if (error) {
-      console.error('Fetch Notes Error:', error.message);
-      Alert.alert('Error', error.message);
-    } else {
-      setNotes(data);
-    }
+    if (error) CustomAlert.alert("Error", error.message, [{ text: "OK" }]);
+    else setNotes(data);
     setLoading(false);
   };
 
-  // ✅ Add / Update note (works with or without login)
   const handleSave = async () => {
     if (!title.trim()) {
-      Alert.alert('Validation', 'Title cannot be empty.');
+      CustomAlert.alert("Validation", "Title cannot be empty.", [{ text: "OK" }]);
       return;
     }
 
     try {
       setLoading(true);
+      
+      // Convert file data to just URIs for database storage
+      const mediaPayload = {
+        media_photo: attachments.photo.map(f => typeof f === 'string' ? f : f.uri),
+        media_video: attachments.video.map(f => typeof f === 'string' ? f : f.uri),
+        media_pdf: attachments.pdf.map(f => typeof f === 'string' ? f : f.uri),
+        media_audio: attachments.audio.map(f => typeof f === 'string' ? f : f.uri),
+      };
+
       if (editingNoteId) {
-        const updateData = { title, content, updated_at: new Date() };
-        const query = supabase
-          .from('notes')
-          .update(updateData)
-          .eq('id', editingNoteId);
-        
-        // Only filter by user_id if logged in
-        if (user) {
-          query.eq('user_id', user.id);
-        } else {
-          query.is('user_id', null);
-        }
+        const updateData = { title, content, updated_at: new Date(), ...mediaPayload };
+        let query = supabase.from("notes").update(updateData).eq("id", editingNoteId);
+        if (user) query = query.eq("user_id", user.id);
+        else query = query.is("user_id", null);
         
         const { error } = await query;
         if (error) throw error;
+        CustomAlert.alert("Success", "Note updated successfully.", [{ text: "OK" }]);
       } else {
-        // Insert note with user_id if logged in, null if not
         const { error } = await supabase
-          .from('notes')
-          .insert([{ user_id: user?.id || null, title, content, completed: false }]);
+          .from("notes")
+          .insert([{ user_id: user?.id || null, title, content, completed: false, ...mediaPayload }]);
         if (error) throw error;
+        CustomAlert.alert("Success", "Note added successfully.", [{ text: "OK" }]);
       }
+
       resetForm();
       fetchNotes(user?.id);
     } catch (err) {
-      console.error('Save Note Error:', err.message);
-      Alert.alert('Error', err.message);
+      CustomAlert.alert("Error", err.message, [{ text: "OK" }]);
     } finally {
       setLoading(false);
     }
   };
 
-  // ✅ Toggle note completion status
   const toggleComplete = async (noteId, currentStatus) => {
     try {
-      const query = supabase
-        .from('notes')
+      const { error } = await supabase
+        .from("notes")
         .update({ completed: !currentStatus, updated_at: new Date() })
-        .eq('id', noteId);
-      
-      // Only filter by user_id if logged in
-      if (user) {
-        query.eq('user_id', user.id);
-      } else {
-        query.is('user_id', null);
-      }
-      
-      const { error } = await query;
+        .eq("id", noteId);
       if (error) throw error;
-      
       fetchNotes(user?.id);
     } catch (err) {
-      console.error('Toggle Complete Error:', err.message);
-      Alert.alert('Error', err.message);
+      CustomAlert.alert("Error", err.message, [{ text: "OK" }]);
     }
   };
 
-  // ✅ Delete note (works with or without login)
   const handleDelete = async (noteId) => {
-    Alert.alert('Confirm', 'Delete this note?', [
-      { text: 'Cancel', style: 'cancel' },
+    CustomAlert.alert("Delete Note", "Are you sure you want to delete this note?", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: 'Delete',
-        style: 'destructive',
+        text: "Delete",
+        style: "destructive",
         onPress: async () => {
-          const query = supabase
-            .from('notes')
-            .delete()
-            .eq('id', noteId);
-          
-          // Only filter by user_id if logged in
-          if (user) {
-            query.eq('user_id', user.id);
-          } else {
-            query.is('user_id', null);
+          try {
+            let query = supabase.from("notes").delete().eq("id", noteId);
+            if (user) query = query.eq("user_id", user.id);
+            else query = query.is("user_id", null);
+            
+            const { error } = await query;
+            if (error) throw error;
+            
+            CustomAlert.alert("Success", "Note deleted successfully.", [{ text: "OK" }]);
+            fetchNotes(user?.id);
+            setSelectedNote(null);
+          } catch (err) {
+            CustomAlert.alert("Error", err.message, [{ text: "OK" }]);
           }
-          
-          const { error } = await query;
-          if (error) Alert.alert('Error', error.message);
-          else fetchNotes(user?.id);
         },
       },
     ]);
   };
 
-  // ✅ Edit note
-  const handleEdit = (note) => {
-    setTitle(note.title);
-    setContent(note.content);
-    setEditingNoteId(note.id);
+  const startRecording = async () => {
+    try {
+      const { status } = await Audio.requestPermissionsAsync();
+      if (status !== 'granted') {
+        CustomAlert.alert("Permission Denied", "Please grant microphone permission to record audio.", [{ text: "OK" }]);
+        return;
+      }
+
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: true,
+        playsInSilentModeIOS: true,
+      });
+
+      const { recording } = await Audio.Recording.createAsync(
+        Audio.RecordingOptionsPresets.HIGH_QUALITY
+      );
+      
+      setRecording(recording);
+      setIsRecording(true);
+    } catch (err) {
+      CustomAlert.alert("Error", "Failed to start recording: " + err.message, [{ text: "OK" }]);
+    }
+  };
+
+  const stopRecording = async () => {
+    if (!recording) return;
+
+    try {
+      setIsRecording(false);
+      await recording.stopAndUnloadAsync();
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+      });
+      
+      const uri = recording.getURI();
+      const fileName = `audio_${Date.now()}.m4a`;
+      
+      if (uri) {
+        const fileData = { uri, name: fileName };
+        
+        setAttachments((prev) => ({
+          ...prev,
+          audio: [...prev.audio, fileData],
+        }));
+
+        CustomAlert.alert("Success", "✅ Audio recorded successfully!", [
+          { text: "OK" },
+        ]);
+      }
+      
+      setRecording(null);
+      setShowRecordingModal(false);
+      setRecordingDuration(0);
+    } catch (err) {
+      CustomAlert.alert("Error", "Failed to stop recording: " + err.message, [{ text: "OK" }]);
+    }
+  };
+
+  const cancelRecording = async () => {
+    if (recording) {
+      try {
+        setIsRecording(false);
+        await recording.stopAndUnloadAsync();
+        await Audio.setAudioModeAsync({
+          allowsRecordingIOS: false,
+        });
+        setRecording(null);
+      } catch (err) {
+        console.error("Error canceling recording:", err);
+      }
+    }
+    setShowRecordingModal(false);
+    setRecordingDuration(0);
+  };
+
+  const formatRecordingTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const handleAttachment = async (type) => {
+    setShowAttachmentModal(false);
+    
+    if (type === "audio") {
+      setShowRecordingModal(true);
+      return;
+    }
+
+    try {
+      let fileUri = null;
+      let fileName = null;
+
+      if (type === "image") {
+        const res = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          quality: 0.8,
+        });
+
+        if (!res.canceled && res.assets && res.assets.length > 0) {
+          fileUri = res.assets[0].uri;
+          fileName = res.assets[0].fileName || `image_${Date.now()}.jpg`;
+        }
+      } else if (type === "video") {
+        const res = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Videos,
+          allowsEditing: true,
+          quality: 0.8,
+        });
+
+        if (!res.canceled && res.assets && res.assets.length > 0) {
+          fileUri = res.assets[0].uri;
+          fileName = res.assets[0].fileName || `video_${Date.now()}.mp4`;
+        }
+      } else if (type === "document") {
+        const res = await DocumentPicker.getDocumentAsync({
+          type: "application/pdf",
+          copyToCacheDirectory: true,
+        });
+
+        if (res.type === "success") {
+          fileUri = res.uri;
+          fileName = res.name || `document_${Date.now()}.pdf`;
+        }
+      }
+
+      if (fileUri) {
+        const fileData = { uri: fileUri, name: fileName };
+        
+        // Map type to the correct attachment key
+        const attachmentKey = type === "image" ? "photo" : type === "document" ? "pdf" : type;
+        
+        setAttachments((prev) => ({
+          ...prev,
+          [attachmentKey]: [...prev[attachmentKey], fileData],
+        }));
+
+        CustomAlert.alert("Success", `✅ ${type} attached successfully!`, [
+          { text: "OK" },
+        ]);
+      } else {
+        CustomAlert.alert("Cancelled", "No file selected.", [{ text: "OK" }]);
+      }
+    } catch (err) {
+      CustomAlert.alert("Error", err.message, [{ text: "OK" }]);
+    }
   };
 
   const resetForm = () => {
-    setTitle('');
-    setContent('');
+    setTitle("");
+    setContent("");
     setEditingNoteId(null);
+    setAttachments({ photo: [], video: [], pdf: [], audio: [] });
   };
 
-  // ✅ Logout
   const handleLogout = async () => {
-    Alert.alert('Confirm Logout', 'Are you sure you want to logout?', [
-      { text: 'Cancel', style: 'cancel' },
+    CustomAlert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
       {
-        text: 'Logout',
-        style: 'destructive',
+        text: "Logout",
+        style: "destructive",
         onPress: async () => {
           await supabase.auth.signOut();
           setUser(null);
           setNotes([]);
-          navigation.replace('Login');
+          navigation.replace("Login");
         },
       },
     ]);
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  };
+
+  const renderMediaInfo = (note) => {
+    const mediaCount = {
+      photos: note.media_photo?.length || 0,
+      videos: note.media_video?.length || 0,
+      pdfs: note.media_pdf?.length || 0,
+      audio: note.media_audio?.length || 0,
+    };
+
+    const total = Object.values(mediaCount).reduce((a, b) => a + b, 0);
+    if (total === 0) return null;
+
+    return (
+      <View style={styles.mediaSection}>
+        <Text style={styles.mediaSectionTitle}>Attachments ({total})</Text>
+        
+        {/* Photos */}
+        {mediaCount.photos > 0 && (
+          <View>
+            <Text style={styles.mediaItem}>📷 Photos: {mediaCount.photos}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.mediaGallery}>
+              {note.media_photo.map((uri, index) => (
+                <Image
+                  key={index}
+                  source={{ uri }}
+                  style={styles.mediaThumbnail}
+                  resizeMode="cover"
+                />
+              ))}
+            </ScrollView>
+          </View>
+        )}
+        
+        {mediaCount.videos > 0 && (
+          <View style={styles.mediaItemContainer}>
+            <Text style={styles.mediaItem}>🎥 Videos: {mediaCount.videos}</Text>
+            <View style={styles.fileList}>
+              {note.media_video.map((uri, index) => (
+                <Text key={index} style={styles.fileName} numberOfLines={1}>
+                  • Video {index + 1}
+                </Text>
+              ))}
+            </View>
+          </View>
+        )}
+        
+        {mediaCount.pdfs > 0 && (
+          <View style={styles.mediaItemContainer}>
+            <Text style={styles.mediaItem}>📄 PDFs: {mediaCount.pdfs}</Text>
+            <View style={styles.fileList}>
+              {note.media_pdf.map((uri, index) => (
+                <Text key={index} style={styles.fileName} numberOfLines={1}>
+                  • PDF {index + 1}
+                </Text>
+              ))}
+            </View>
+          </View>
+        )}
+        
+        {mediaCount.audio > 0 && (
+          <View style={styles.mediaItemContainer}>
+            <Text style={styles.mediaItem}>🎙️ Audio: {mediaCount.audio}</Text>
+            <View style={styles.fileList}>
+              {note.media_audio.map((uri, index) => (
+                <Text key={index} style={styles.fileName} numberOfLines={1}>
+                  • Recording {index + 1}
+                </Text>
+              ))}
+            </View>
+          </View>
+        )}
+      </View>
+    );
+  };
+
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#101010" />
-      
+    <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
+      <StatusBar barStyle="light-content" backgroundColor="#0a0a0a" />
+
       {/* Header */}
       <View style={styles.header}>
-        <View>
-          <Text style={styles.headerTitle}>My Notes</Text>
-          {user ? (
-            <Text style={styles.userInfo}>👤 {user.email}</Text>
-          ) : (
-            <Text style={styles.userInfo}>👤 Guest Mode</Text>
-          )}
-        </View>
+        <Text style={styles.headerTitle}>Do-It</Text>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
 
-      {/* Add/Edit Note Form */}
-      <View style={styles.formContainer}>
-        <Text style={styles.formTitle}>
-          {editingNoteId ? '✏️ Edit Note' : '➕ New Note'}
+      {/* Note Form */}
+      <View style={styles.formCard}>
+        <Text style={styles.sectionTitle}>
+          {editingNoteId ? "Edit Note" : "New Note"}
         </Text>
-        
         <TextInput
           style={styles.input}
           placeholder="Title"
-          placeholderTextColor="#666"
+          placeholderTextColor="#999"
           value={title}
           onChangeText={setTitle}
         />
-        
         <TextInput
           style={[styles.input, styles.multiline]}
-          placeholder="Write your note..."
-          placeholderTextColor="#666"
+          placeholder="Write something..."
+          placeholderTextColor="#999"
           value={content}
           multiline
           onChangeText={setContent}
         />
 
-        <View style={styles.buttonRow}>
-          <TouchableOpacity
-            style={[styles.saveButton, loading && { opacity: 0.6 }]}
-            onPress={handleSave}
-            disabled={loading}
-          >
-            {loading ? (
-              <ActivityIndicator color="#fff" size="small" />
-            ) : (
-              <Text style={styles.saveButtonText}>
-                {editingNoteId ? 'Update' : 'Add Note'}
-              </Text>
-            )}
-          </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          style={styles.attachButton}
+          onPress={() => setShowAttachmentModal(true)}
+        >
+          <Text style={styles.attachText}>📎 Add Attachment</Text>
+        </TouchableOpacity>
 
-          {editingNoteId && (
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={resetForm}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
+        {/* Show current attachments count */}
+        {(attachments.photo.length > 0 ||
+          attachments.video.length > 0 ||
+          attachments.pdf.length > 0 ||
+          attachments.audio.length > 0) && (
+          <View style={styles.attachmentPreview}>
+            <Text style={styles.attachmentText}>
+              {attachments.photo.length > 0 && `📷 ${attachments.photo.length} `}
+              {attachments.video.length > 0 && `🎥 ${attachments.video.length} `}
+              {attachments.pdf.length > 0 && `📄 ${attachments.pdf.length} `}
+              {attachments.audio.length > 0 && `🎙️ ${attachments.audio.length}`}
+            </Text>
+          </View>
+        )}
+
+        <TouchableOpacity
+          style={[styles.saveButton, loading && { opacity: 0.6 }]}
+          onPress={handleSave}
+          disabled={loading}
+        >
+          {loading ? (
+            <ActivityIndicator color="#fff" size="small" />
+          ) : (
+            <Text style={styles.saveButtonText}>
+              {editingNoteId ? "Update" : "Add Note"}
+            </Text>
           )}
-        </View>
+        </TouchableOpacity>
       </View>
 
-      {/* Notes List */}
-      <View style={styles.listContainer}>
-        <Text style={styles.listTitle}>
-          📝 Your Notes ({notes.length})
-        </Text>
-        
-        {loading && notes.length === 0 ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#22c55e" />
-            <Text style={styles.loadingText}>Loading notes...</Text>
-          </View>
-        ) : notes.length === 0 ? (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>📭</Text>
-            <Text style={styles.emptyTitle}>No notes yet</Text>
-            <Text style={styles.emptySubtitle}>Create your first note above!</Text>
-          </View>
-        ) : (
-          <FlatList
-            data={notes}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-            renderItem={({ item }) => (
-              <View style={styles.noteCard}>
-                <View style={styles.noteRow}>
-                  {/* Checkbox */}
-                  <TouchableOpacity 
-                    style={styles.checkbox}
-                    onPress={() => toggleComplete(item.id, item.completed)}
-                  >
-                    <View style={[
-                      styles.checkboxInner,
-                      item.completed && styles.checkboxChecked
-                    ]}>
-                      {item.completed && <Text style={styles.checkmark}>✓</Text>}
-                    </View>
-                  </TouchableOpacity>
+      {/* Attachment Modal */}
+      <Modal visible={showAttachmentModal} transparent animationType="fade">
+        <View style={styles.attachmentModalOverlay}>
+          <View style={styles.attachmentModalCard}>
+            <Text style={styles.attachmentModalTitle}>Add Attachment</Text>
+            <Text style={styles.attachmentModalSubtitle}>Choose file type</Text>
+            
+            <TouchableOpacity
+              style={styles.attachmentOption}
+              onPress={() => handleAttachment("document")}
+            >
+              <Text style={styles.attachmentOptionIcon}>📄</Text>
+              <Text style={styles.attachmentOptionText}>Document</Text>
+            </TouchableOpacity>
 
-                  {/* Note Content */}
-                  <TouchableOpacity 
-                    style={styles.noteContent}
-                    onPress={() => handleEdit(item)}
-                  >
-                    <Text style={[
-                      styles.noteTitle,
-                      item.completed && styles.completedText
-                    ]}>
-                      {item.title}
-                    </Text>
-                    {item.content ? (
-                      <Text style={[
-                        styles.noteDescription,
-                        item.completed && styles.completedText
-                      ]}>
-                        {item.content.length > 80
-                          ? item.content.slice(0, 80) + '...'
-                          : item.content}
-                      </Text>
-                    ) : null}
-                  </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.attachmentOption}
+              onPress={() => handleAttachment("image")}
+            >
+              <Text style={styles.attachmentOptionIcon}>🖼️</Text>
+              <Text style={styles.attachmentOptionText}>Image</Text>
+            </TouchableOpacity>
 
-                  {/* Delete Button */}
-                  <TouchableOpacity 
-                    style={styles.deleteButton}
-                    onPress={() => handleDelete(item.id)}
-                  >
-                    <Text style={styles.deleteIcon}>🗑️</Text>
-                  </TouchableOpacity>
-                </View>
+            <TouchableOpacity
+              style={styles.attachmentOption}
+              onPress={() => handleAttachment("video")}
+            >
+              <Text style={styles.attachmentOptionIcon}>🎥</Text>
+              <Text style={styles.attachmentOptionText}>Video</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.attachmentOption}
+              onPress={() => handleAttachment("audio")}
+            >
+              <Text style={styles.attachmentOptionIcon}>🎙️</Text>
+              <Text style={styles.attachmentOptionText}>Record Audio</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.attachmentModalCancel}
+              onPress={() => setShowAttachmentModal(false)}
+            >
+              <Text style={styles.attachmentModalCancelText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Recording Modal */}
+      <Modal visible={showRecordingModal} transparent animationType="fade">
+        <View style={styles.recordingModalOverlay}>
+          <View style={styles.recordingModalCard}>
+            <Text style={styles.recordingModalTitle}>
+              {isRecording ? "🎙️ Recording..." : "Ready to Record"}
+            </Text>
+            
+            {isRecording && (
+              <View style={styles.recordingIndicator}>
+                <View style={styles.recordingDot} />
+                <Text style={styles.recordingTime}>{formatRecordingTime(recordingDuration)}</Text>
               </View>
             )}
-          />
-        )}
-      </View>
-    </View>
+
+            <View style={styles.recordingActions}>
+              {!isRecording ? (
+                <TouchableOpacity
+                  style={styles.recordButton}
+                  onPress={startRecording}
+                >
+                  <Text style={styles.recordButtonText}>Start Recording</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={styles.stopButton}
+                  onPress={stopRecording}
+                >
+                  <Text style={styles.stopButtonText}>Stop & Save</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={styles.cancelRecordButton}
+                onPress={cancelRecording}
+              >
+                <Text style={styles.cancelRecordButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Notes List */}
+      {loading && notes.length === 0 ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#22c55e" />
+        </View>
+      ) : (
+        <FlatList
+          data={notes}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          renderItem={({ item }) => (
+            <TouchableOpacity
+              activeOpacity={0.9}
+              style={[styles.noteCard, item.completed && styles.completedCard]}
+              onPress={() => setSelectedNote(item)}
+            >
+              <View style={styles.noteRow}>
+                <TouchableOpacity
+                  onPress={() => toggleComplete(item.id, item.completed)}
+                  style={[styles.checkbox, item.completed && styles.checkboxChecked]}
+                >
+                  {item.completed && <Text style={styles.checkmark}>✓</Text>}
+                </TouchableOpacity>
+                <View style={{ flex: 1 }}>
+                  <Text
+                    style={[
+                      styles.noteTitle,
+                      item.completed && styles.noteCompleted,
+                    ]}
+                  >
+                    {item.title}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.noteContent,
+                      item.completed && styles.noteCompleted,
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {item.content}
+                  </Text>
+                </View>
+              </View>
+            </TouchableOpacity>
+          )}
+        />
+      )}
+
+      {/* Note Details Modal */}
+      <Modal visible={!!selectedNote} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <ScrollView 
+              showsVerticalScrollIndicator={false}
+              style={styles.modalScrollView}
+              contentContainerStyle={styles.modalScrollContent}
+            >
+              <Text style={styles.modalTitle}>{selectedNote?.title}</Text>
+              
+              <ScrollView 
+                style={styles.contentScrollView}
+                nestedScrollEnabled={true}
+              >
+                <Text style={styles.modalContent}>{selectedNote?.content}</Text>
+              </ScrollView>
+              
+              {/* Status Badge */}
+              <View style={styles.statusBadge}>
+                <Text style={styles.statusText}>
+                  {selectedNote?.completed ? "✓ Completed" : "⏱️ In Progress"}
+                </Text>
+              </View>
+
+              {/* Media Information */}
+              {selectedNote && renderMediaInfo(selectedNote)}
+
+              {/* Timestamps */}
+              <View style={styles.timestampSection}>
+                <View style={styles.timestampRow}>
+                  <Text style={styles.timestampLabel}>Created:</Text>
+                  <Text style={styles.timestampValue}>
+                    {selectedNote?.created_at && formatDate(selectedNote.created_at)}
+                  </Text>
+                </View>
+                <View style={styles.timestampRow}>
+                  <Text style={styles.timestampLabel}>Updated:</Text>
+                  <Text style={styles.timestampValue}>
+                    {selectedNote?.updated_at && formatDate(selectedNote.updated_at)}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Action Buttons */}
+              <View style={styles.modalActions}>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: "#22c55e" }]}
+                  onPress={() => {
+                    setTitle(selectedNote.title);
+                    setContent(selectedNote.content);
+                    setEditingNoteId(selectedNote.id);
+                    setAttachments({
+                      photo: selectedNote.media_photo || [],
+                      video: selectedNote.media_video || [],
+                      pdf: selectedNote.media_pdf || [],
+                      audio: selectedNote.media_audio || [],
+                    });
+                    setSelectedNote(null);
+                  }}
+                >
+                  <Text style={styles.modalButtonText}>✏️ Edit</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.modalButton, { backgroundColor: "#ef4444" }]}
+                  onPress={() => handleDelete(selectedNote.id)}
+                >
+                  <Text style={styles.modalButtonText}>🗑️ Delete</Text>
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity
+                style={styles.modalClose}
+                onPress={() => setSelectedNote(null)}
+              >
+                <Text style={styles.closeText}>Close</Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#101010',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 50,
-    paddingBottom: 20,
-    backgroundColor: '#1a1a1a',
-    borderBottomWidth: 1,
-    borderBottomColor: '#2a2a2a',
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: '700',
-    color: '#fff',
-    marginBottom: 4,
-  },
-  userInfo: {
-    fontSize: 14,
-    color: '#999',
-  },
+  container: { flex: 1, backgroundColor: "#0a0a0a", padding: 20, paddingTop: 50 },
+  header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16 },
+  headerTitle: { color: "#fff", fontSize: 28, fontWeight: "700" },
   logoutButton: {
-    backgroundColor: '#2a2a2a',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    backgroundColor: "rgba(255,255,255,0.1)",
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#333',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
-  logoutText: {
-    color: '#ff6b6b',
-    fontWeight: '600',
-    fontSize: 14,
+  logoutText: { color: "#ff6b6b", fontWeight: "600" },
+  formCard: {
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 20,
+    shadowColor: "#000",
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
   },
-  formContainer: {
-    padding: 20,
-    backgroundColor: '#1a1a1a',
-    marginHorizontal: 16,
-    marginTop: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#2a2a2a',
-  },
-  formTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 16,
-  },
+  sectionTitle: { color: "#fff", fontWeight: "600", fontSize: 18, marginBottom: 12 },
   input: {
-    backgroundColor: '#0a0a0a',
-    color: '#fff',
-    padding: 14,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    color: "#fff",
     borderRadius: 10,
+    padding: 14,
+    marginBottom: 10,
+    fontSize: 16,
+  },
+  multiline: { height: 100, textAlignVertical: "top" },
+  attachButton: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  attachText: {
+    color: "#ddd",
     fontSize: 16,
+    fontWeight: "500",
+    letterSpacing: 0.3,
   },
-  multiline: {
-    height: 100,
-    textAlignVertical: 'top',
+  attachmentPreview: {
+    backgroundColor: "rgba(34,197,94,0.1)",
+    borderRadius: 8,
+    padding: 10,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "rgba(34,197,94,0.3)",
   },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
+  attachmentText: {
+    color: "#22c55e",
+    fontSize: 14,
+    textAlign: "center",
   },
   saveButton: {
-    flex: 1,
-    backgroundColor: '#22c55e',
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 48,
+    backgroundColor: "#22c55e",
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: "center",
   },
-  saveButtonText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 16,
-  },
-  cancelButton: {
-    backgroundColor: '#2a2a2a',
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
+  saveButtonText: { color: "#fff", fontWeight: "600", fontSize: 16 },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  noteCard: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#333',
+    borderColor: "rgba(255,255,255,0.07)",
+    shadowColor: "#000",
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
-  cancelButtonText: {
-    color: '#999',
-    fontWeight: '600',
-    fontSize: 16,
+  completedCard: { opacity: 0.5 },
+  noteRow: { flexDirection: "row", alignItems: "center", gap: 12 },
+  checkbox: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: "#666",
+    alignItems: "center",
+    justifyContent: "center",
   },
-  listContainer: {
+  checkboxChecked: { backgroundColor: "#22c55e", borderColor: "#22c55e" },
+  checkmark: { color: "#fff", fontWeight: "700" },
+  noteTitle: { color: "#fff", fontSize: 17, fontWeight: "600" },
+  noteContent: { color: "#999", fontSize: 14, marginTop: 2 },
+  noteCompleted: { textDecorationLine: "line-through", color: "#666" },
+  modalOverlay: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 20,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: 20,
   },
-  listTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#fff',
+  modalCard: {
+    backgroundColor: "rgba(20,20,20,0.98)",
+    borderRadius: 20,
+    width: "100%",
+    maxHeight: "85%",
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  modalScrollView: {
+    maxHeight: "100%",
+  },
+  modalScrollContent: {
+    padding: 24,
+  },
+  contentScrollView: {
+    maxHeight: 200,
     marginBottom: 16,
-    paddingHorizontal: 4,
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+  modalTitle: { 
+    color: "#fff", 
+    fontSize: 22, 
+    fontWeight: "700", 
+    marginBottom: 12,
+    textAlign: "center"
   },
-  loadingText: {
-    color: '#999',
-    marginTop: 12,
+  modalContent: { 
+    color: "#bbb", 
     fontSize: 16,
+    lineHeight: 24,
   },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingBottom: 60,
-  },
-  emptyText: {
-    fontSize: 64,
+  statusBadge: {
+    backgroundColor: "rgba(34,197,94,0.15)",
+    borderRadius: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    alignSelf: "center",
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(34,197,94,0.3)",
   },
-  emptyTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: '#fff',
+  statusText: {
+    color: "#22c55e",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  mediaSection: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  mediaSectionTitle: {
+    color: "#fff",
+    fontSize: 15,
+    fontWeight: "600",
     marginBottom: 8,
   },
-  emptySubtitle: {
+  mediaItem: {
+    color: "#999",
     fontSize: 14,
-    color: '#666',
+    marginVertical: 6,
+    fontWeight: "600",
   },
-  noteCard: {
-    backgroundColor: '#1a1a1a',
+  mediaItemContainer: {
+    marginVertical: 6,
+  },
+  mediaGallery: {
+    flexDirection: "row",
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  mediaThumbnail: {
+    width: 80,
+    height: 80,
+    borderRadius: 8,
+    marginRight: 8,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  fileList: {
+    marginTop: 4,
+    marginLeft: 8,
+  },
+  fileName: {
+    color: "#777",
+    fontSize: 12,
+    marginVertical: 2,
+  },
+  timestampSection: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  timestampRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginVertical: 4,
+  },
+  timestampLabel: {
+    color: "#888",
+    fontSize: 14,
+    fontWeight: "500",
+  },
+  timestampValue: {
+    color: "#bbb",
+    fontSize: 14,
+  },
+  modalActions: { 
+    flexDirection: "row", 
+    justifyContent: "space-between", 
+    gap: 12,
+    marginBottom: 16,
+  },
+  modalButton: { 
+    flex: 1,
+    borderRadius: 12, 
+    paddingVertical: 14, 
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+  },
+  modalButtonText: { color: "#fff", fontWeight: "600", fontSize: 15 },
+  modalClose: {
+    alignSelf: "center",
+    backgroundColor: "rgba(255,255,255,0.08)",
+    paddingHorizontal: 32,
+    paddingVertical: 12,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  closeText: { color: "#aaa", fontWeight: "600", fontSize: 15 },
+  attachmentModalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  attachmentModalCard: {
+    backgroundColor: "rgba(20,20,20,0.98)",
+    borderRadius: 20,
+    padding: 24,
+    width: "85%",
+    borderWidth: 1,
+    borderColor: "#333",
+  },
+  attachmentModalTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  attachmentModalSubtitle: {
+    color: "#999",
+    fontSize: 14,
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  attachmentOption: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: '#2a2a2a',
+    borderColor: "rgba(255,255,255,0.1)",
   },
-  noteRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  attachmentOptionIcon: {
+    fontSize: 28,
+    marginRight: 16,
   },
-  checkbox: {
-    marginRight: 12,
-    padding: 4,
+  attachmentOptionText: {
+    color: "#fff",
+    fontSize: 17,
+    fontWeight: "600",
   },
-  checkboxInner: {
-    width: 24,
-    height: 24,
-    borderWidth: 2,
-    borderColor: '#666',
-    borderRadius: 6,
-    justifyContent: 'center',
-    alignItems: 'center',
+  attachmentModalCancel: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 12,
+    padding: 16,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
   },
-  checkboxChecked: {
-    backgroundColor: '#22c55e',
-    borderColor: '#22c55e',
+  attachmentModalCancelText: {
+    color: "#ff6b6b",
+    fontSize: 16,
+    fontWeight: "600",
+    textAlign: "center",
   },
-  checkmark: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  noteContent: {
+  // Recording Modal Styles
+  recordingModalOverlay: {
     flex: 1,
+    backgroundColor: "rgba(0,0,0,0.85)",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  noteTitle: {
-    fontWeight: '600',
+  recordingModalCard: {
+    backgroundColor: "rgba(20,20,20,0.98)",
+    borderRadius: 20,
+    padding: 32,
+    width: "85%",
+    borderWidth: 1,
+    borderColor: "#333",
+    alignItems: "center",
+  },
+  recordingModalTitle: {
+    color: "#fff",
+    fontSize: 22,
+    fontWeight: "700",
+    textAlign: "center",
+    marginBottom: 24,
+  },
+  recordingIndicator: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "rgba(239,68,68,0.1)",
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    marginBottom: 32,
+    borderWidth: 1,
+    borderColor: "rgba(239,68,68,0.3)",
+  },
+  recordingDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: "#ef4444",
+    marginRight: 12,
+  },
+  recordingTime: {
+    color: "#ef4444",
+    fontSize: 24,
+    fontWeight: "700",
+    fontVariant: ["tabular-nums"],
+  },
+  recordingActions: {
+    width: "100%",
+  },
+  recordButton: {
+    backgroundColor: "#22c55e",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginBottom: 12,
+  },
+  recordButtonText: {
+    color: "#fff",
     fontSize: 18,
-    marginBottom: 4,
-    color: '#fff',
+    fontWeight: "600",
   },
-  noteDescription: {
-    color: '#999',
-    fontSize: 14,
-    lineHeight: 20,
+  stopButton: {
+    backgroundColor: "#ef4444",
+    borderRadius: 12,
+    paddingVertical: 16,
+    alignItems: "center",
+    marginBottom: 12,
   },
-  completedText: {
-    textDecorationLine: 'line-through',
-    opacity: 0.5,
+  stopButtonText: {
+    color: "#fff",
+    fontSize: 18,
+    fontWeight: "600",
   },
-  deleteButton: {
-    padding: 8,
-    marginLeft: 8,
+  cancelRecordButton: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
   },
-  deleteIcon: {
-    fontSize: 20,
+  cancelRecordButtonText: {
+    color: "#aaa",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
