@@ -5,7 +5,7 @@
     "slug": "Do-It",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/logo.png",
+     "icon": "./assets/images/icon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
@@ -13,8 +13,20 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/logo.png",
-        "backgroundColor": "#ffffff"
+
+
+        "backgroundColor": "#E6F4FE",
+
+
+        "foregroundImage": "./assets/images/android-icon-foreground.png",
+
+
+        "backgroundImage": "./assets/images/android-icon-background.png",
+
+
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+
+
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
@@ -48,6 +60,12 @@
       "eas": {
         "projectId": "fc7e0a34-81aa-4e8b-afd0-98f9e6d3bd71"
       }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/fc7e0a34-81aa-4e8b-afd0-98f9e6d3bd71"
     }
   }
 }

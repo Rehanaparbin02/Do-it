@@ -890,13 +890,17 @@ export default function Home({ navigation }) {
                       audio: selectedNote.media_audio || [],
                     });
                     setSelectedNote(null);
+                    setShowFormModal(true);
                   }}
                 >
                   <Text style={styles.modalButtonText}>✏️ Edit</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={[styles.modalButton, { backgroundColor: "#ef4444" }]}
-                  onPress={() => handleDelete(selectedNote.id)}
+                  onPress={() => {
+                    setSelectedNote(null);
+                    handleDelete(selectedNote.id);
+                  }}
                 >
                   <Text style={styles.modalButtonText}>🗑️ Delete</Text>
                 </TouchableOpacity>
@@ -963,10 +967,10 @@ const styles = StyleSheet.create({
   },
   header: { 
     position: "relative",
-    top: 5,
+    top: -30,
     flexDirection: "row", 
     justifyContent: "space-between", 
-    marginBottom: 10 
+    marginBottom: -20 
   },
   headerTitle: { 
     color: "#22c55e", 
@@ -1140,7 +1144,7 @@ const styles = StyleSheet.create({
   checkmark: { color: "#fff", fontWeight: "700" },
   noteTitle: { color: "#fff", fontSize: 17, fontWeight: "600" },
   noteContent: { color: "#999", fontSize: 14, marginTop: 2 },
-  noteCompleted: { textDecorationLine: "line-through", color: "#22c55e" },
+  noteCompleted: { textDecorationLine: "line-through", color: "#666" },
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.85)",
