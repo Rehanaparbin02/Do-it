@@ -25,6 +25,7 @@ import { supabase } from "../lib/supabaseClient";
 import { CustomAlert } from "../components/CustomAlert";
 
 import { Alert } from "react-native"; 
+import Pill from "./Pill";
 
 export default function Home({ navigation }) {
   const [notes, setNotes] = useState([]);
@@ -50,6 +51,8 @@ export default function Home({ navigation }) {
   const [viewingImage, setViewingImage] = useState(null);
   const fadeAnim = useState(new Animated.Value(0))[0];
   const [showFormModal, setShowFormModal] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedNotes, setSelectedNotes] = useState([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -204,11 +207,10 @@ export default function Home({ navigation }) {
 
               // Update UI
               setNotes((prev) => prev.filter((note) => note.id !== noteId));
-              setSelectedNote(null);
 
-              Alert.alert("Success", "Note deleted successfully.");
+              CustomAlert.alert("Success", "Note deleted successfully.", [{ text: "OK" }]);
             } catch (err) {
-              Alert.alert("Error", err.message || "Failed to delete note.");
+              CustomAlert.alert("Error", err.message || "Failed to delete note.", [{ text: "OK" }]);
             } finally {
               setLoading(false);
             }
@@ -592,7 +594,7 @@ export default function Home({ navigation }) {
           <Text style={styles.logoutText}>Logout</Text>
         </TouchableOpacity>
       </View>
-
+      <Pill />
       {/* FAB Button */}
       <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
         <TouchableOpacity
@@ -967,7 +969,7 @@ const styles = StyleSheet.create({
   },
   header: { 
     position: "relative",
-    top: -30,
+    top: -10,
     flexDirection: "row", 
     justifyContent: "space-between", 
     marginBottom: -20 

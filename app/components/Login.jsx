@@ -27,6 +27,10 @@ export default function Login({ navigation }) {
         password,
       });
 
+      console.log('data = ',data);
+      console.log('error = ',error);
+      
+
       if (error) {
         // Check if error is due to unverified email
         if (error.message.toLowerCase().includes('email not confirmed')) {
@@ -42,6 +46,7 @@ export default function Login({ navigation }) {
 
       // Successful login
       if (data?.session) {
+        console.log('Sessio = ',data.session);
         Alert.alert('Success', 'Login successful!');
         navigation.reset({
           index: 0,
