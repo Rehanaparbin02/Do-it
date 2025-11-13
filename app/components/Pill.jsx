@@ -17,29 +17,33 @@ export default function Pill({ selectedCategory, onSelectCategory }) {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.scrollContent}
       >
-        {categories.map((category) => (
-          <TouchableOpacity
-            key={category.id}
-            style={[
-              styles.pill,
-              selectedCategory === category.id && {
-                backgroundColor: category.color,
-                borderColor: category.color,
-              },
-            ]}
-            onPress={() => onSelectCategory(category.id)}
-            activeOpacity={0.7}
-          >
-            <Text
+        {categories.map((category) => {
+          const isSelected = selectedCategory === category.id;
+          
+          return (
+            <TouchableOpacity
+              key={category.id}
               style={[
-                styles.pillText,
-                selectedCategory === category.id && styles.pillTextActive,
+                styles.pill,
+                isSelected && {
+                  backgroundColor: category.color,
+                  borderColor: category.color,
+                },
               ]}
+              onPress={() => onSelectCategory(category.id)}
+              activeOpacity={0.7}
             >
-              {category.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.pillText,
+                  isSelected && styles.pillTextActive,
+                ]}
+              >
+                {category.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </ScrollView>
     </View>
   );
@@ -69,6 +73,5 @@ const styles = StyleSheet.create({
   },
   pillTextActive: {
     color: '#fff',
-    backgroundColor: "#22c55e"
   },
 });
