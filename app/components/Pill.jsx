@@ -51,8 +51,9 @@ export default function Pill({ selectedCategory, onSelectCategory }) {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 30,
+    marginBottom: 45,
     marginTop: 25,
+    marginRight: -28
   },
   scrollContent: {
     paddingRight: 20,

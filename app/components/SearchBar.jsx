@@ -97,6 +97,7 @@ export default function SearchBar({ searchQuery, onSearchChange, onClearSearch }
 const styles = StyleSheet.create({
   container: {
     marginBottom: 20,
+    marginTop: 20,
   },
   searchInputContainer: {
     flexDirection: 'row',

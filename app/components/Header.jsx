@@ -3,9 +3,9 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 
 
-export default function Header({ onLogout, onMenuPress, onRemindersPress = () => {}, remindersCount = 0, showingReminders = false }) {
+export default function Header({ onLogout, onMenuPress, onnotificationssPress = () => {}, notificationssCount = 0, showingnotificationss = false }) {
   const displayCount =
-    remindersCount > 99 ? '99+' : remindersCount > 9 ? '9+' : `${remindersCount}`;
+    notificationssCount > 99 ? '99+' : notificationssCount > 9 ? '9+' : `${notificationssCount}`;
 
   return (
     <View style={styles.header}>
@@ -22,7 +22,8 @@ export default function Header({ onLogout, onMenuPress, onRemindersPress = () =>
       </TouchableOpacity>
 
       <View style={styles.titleContainer}>
-        <Text style={styles.headerTitle}>My Notes</Text>
+        <Text style={styles.headerTitle}>Get It</Text>
+        <Text style={styles.headerTitleGreen}>Done!</Text>
         <View style={styles.headerBadge}>
           <View style={styles.headerBadgeDot} />
         </View>
@@ -30,17 +31,17 @@ export default function Header({ onLogout, onMenuPress, onRemindersPress = () =>
 
       <TouchableOpacity
         style={[
-          styles.reminderButton,
-          showingReminders && styles.reminderButtonActive,
-          remindersCount === 0 && styles.reminderButtonEmpty,
+          styles.notificationsButton,
+          showingnotificationss && styles.notificationsButtonActive,
+          notificationssCount === 0 && styles.notificationsButtonEmpty,
         ]}
-        onPress={onRemindersPress}
+        onPress={onnotificationssPress}
         activeOpacity={0.8}
       >
-        <Text style={styles.reminderIcon}>⏰</Text>
-        {remindersCount > 0 && (
-          <View style={styles.reminderBadge}>
-            <Text style={styles.reminderBadgeText}>{displayCount}</Text>
+        <Text style={styles.notificationsIcon}>🔔</Text>
+        {notificationssCount > 0 && (
+          <View style={styles.notificationsBadge}>
+            <Text style={styles.notificationsBadgeText}>{displayCount}</Text>
           </View>
         )}
       </TouchableOpacity>
@@ -89,10 +90,20 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   headerTitle: {
-    fontSize: 35,
-    fontWeight: '700',
+    fontSize: 25,
+    fontWeight: '100',
+    color: '#ffffffff',
+    letterSpacing: -0.5,
+    fontFamily: "Nunito",
+    
+  },
+  headerTitleGreen: {
+    fontSize: 25,
+    fontWeight: '100',
     color: '#22c55e',
     letterSpacing: -0.5,
+    fontFamily: "Nunito",
+    textDecorationLine: 'underline'
   },
   // headerBadge: {
   //   width: 8,
@@ -108,30 +119,30 @@ const styles = StyleSheet.create({
   //   borderRadius: 2,
   //   backgroundColor: '#22c55e',
   // },
-  reminderButton: {
+  notificationsButton: {
     width: 44,
     height: 44,
     borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.25)',
-    backgroundColor: 'rgba(34,197,94,0.08)',
+    borderColor: 'rgba(34,197,94,0.3)',
+    backgroundColor: 'transparent',
     position: 'relative',
   },
-  reminderButtonActive: {
+  notificationsButtonActive: {
     backgroundColor: 'rgba(34,197,94,0.2)',
     borderColor: 'rgba(34,197,94,0.5)',
   },
-  reminderButtonEmpty: {
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    borderColor: 'rgba(255,255,255,0.08)',
+  notificationsButtonEmpty: {
+    backgroundColor: 'transparent',
+    borderColor: 'rgba(34,197,94,0.3)',
   },
-  reminderIcon: {
+  notificationsIcon: {
     fontSize: 20,
     color: '#22c55e',
   },
-  reminderBadge: {
+  notificationsBadge: {
     position: 'absolute',
     top: 6,
     right: 6,
@@ -143,7 +154,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingHorizontal: 4,
   },
-  reminderBadgeText: {
+  notificationsBadgeText: {
     color: '#0a0a0a',
     fontSize: 10,
     fontWeight: '700',
