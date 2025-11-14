@@ -29,14 +29,18 @@ export default function NoteFormModal({
   loading = false,
   selectedCategory = null,
   selectedSpaceId = null, // This prop from parent
+  selectedReminderDate = null,   // optional ISO date string or null
+  selectedReminderTime = null,   // optional time string e.g. "12:00 pm"
   onTitleChange,
   onContentChange,
   onCategoryChange,
   onSpaceChange, // Add this prop handler
+  onReminderChange, // optional callback (dateStr, timeStr)
   onSave,
   onCancel,
   onShowAttachmentModal,
 }) {
+
   const totalAttachments =
     attachments.photo.length + attachments.video.length + attachments.pdf.length + attachments.audio.length;
 
@@ -46,6 +50,13 @@ export default function NoteFormModal({
   const [spaces, setSpaces] = useState([]);
   const [loadingSpaces, setLoadingSpaces] = useState(true);
   const [localSpaceId, setLocalSpaceId] = useState(selectedSpaceId);
+  const [localReminderDate, setLocalReminderDate] = useState(selectedReminderDate || "");
+  const [localReminderTime, setLocalReminderTime] = useState(selectedReminderTime || "");
+
+  useEffect(() => {
+    setLocalReminderDate(selectedReminderDate || "");
+    setLocalReminderTime(selectedReminderTime || "");
+  }, [selectedReminderDate, selectedReminderTime, visible]);
 
   // Sync with parent's selectedSpaceId prop
   useEffect(() => {
@@ -87,6 +98,13 @@ export default function NoteFormModal({
       mounted = false;
     };
   }, []);
+
+    const handleReminderChange = (dateStr, timeStr) => {
+    setLocalReminderDate(dateStr ?? localReminderDate);
+    setLocalReminderTime(timeStr ?? localReminderTime);
+    onReminderChange?.(dateStr ?? localReminderDate, timeStr ?? localReminderTime);
+  };
+
 
   const handleCategorySelect = (categoryId) => {
     setLocalCategory(categoryId);
@@ -257,6 +275,35 @@ export default function NoteFormModal({
                   })}
                 </View>
               </View>
+
+                                {/* Reminder */}
+              <View style={styles.reminderSection}>
+                <Text style={styles.reminderTitle}>⏰ Remind at</Text>
+                <Text style={styles.reminderSubtitle}>Set a date & time to be reminded</Text>
+
+                <View style={styles.reminderRow}>
+                  <TextInput
+                    style={[styles.input, styles.reminderInput]}
+                    placeholder="YYYY-MM-DD"
+                    placeholderTextColor="#666"
+                    value={localReminderDate}
+                    onChangeText={(t) => handleReminderChange(t, undefined)}
+                  />
+
+                  <TextInput
+                    style={[styles.input, styles.reminderInput, { marginLeft: 12 }]}
+                    placeholder="12:00 pm"
+                    placeholderTextColor="#666"
+                    value={localReminderTime}
+                    onChangeText={(t) => handleReminderChange(undefined, t)}
+                  />
+                </View>
+
+                <Text style={styles.reminderHint}>
+                  Tip: use ISO date (YYYY-MM-DD) and 12-hour time (e.g. 08:30 am) or leave blank.
+                </Text>
+              </View>
+
 
               {/* Attachments */}
               <View style={styles.attachmentSection}>
@@ -434,6 +481,28 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
+    reminderSection: { marginBottom: 20 },
+  reminderTitle: {
+    color: "#fff",
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 4,
+  },
+  reminderSubtitle: { color: "#666", fontSize: 12, marginBottom: 10 },
+  reminderRow: { flexDirection: "row", alignItems: "center" },
+  reminderInput: {
+    flex: 1,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+    color: "#fff",
+    fontSize: 14,
+  },
+  reminderHint: { color: "#777", fontSize: 12, marginTop: 8 },
+
   attachmentSection: { marginBottom: 24 },
   attachButton: {
     backgroundColor: "rgba(255,255,255,0.05)",

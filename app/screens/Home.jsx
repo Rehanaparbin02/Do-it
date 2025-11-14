@@ -11,6 +11,7 @@ import {
   Easing,
   Modal,
   ScrollView,
+  RefreshControl,
   Alert,
 } from "react-native";
 import { Audio } from 'expo-av';
@@ -29,6 +30,8 @@ import NoteCard from "../components/NoteCard";
 import NoteDetailsModal from "../components/NoteDetailsModal";
 import ImageViewerModal from "../components/ImageViewerModal";
 import Header from "../components/Header";
+import useRefresh from "../hooks/useRefresh"; // adjust relative path as needed
+
 
 export default function Home({ navigation, route }) {
   const [notes, setNotes] = useState([]);
@@ -66,6 +69,25 @@ export default function Home({ navigation, route }) {
   const [selectedSpaceId, setSelectedSpaceId] = useState(null);
   const [showSpaceModal, setShowSpaceModal] = useState(false);
   const [noteFormSpaceId, setNoteFormSpaceId] = useState(null);
+  // const [refreshing, setRefreshing] = useState(false);
+
+   const { refreshing, onRefresh } = useRefresh(
+    [
+      () => fetchNotes(user?.id),
+      () => fetchSpaces(user?.id)
+    ],
+    [user] // dependent on user changing
+  );
+
+
+  //refresh handler 
+  // const handleRefresh = useCallback(async () => {
+  //   setRefreshing(true);
+  //   await fetchNotes(user?.id);
+  //   await fetchSpaces(user?.id);
+  //   setRefreshing(false);
+  // }, [user]);
+
 
   const fetchSpaces = async (userId) => {
     try {
@@ -169,27 +191,29 @@ export default function Home({ navigation, route }) {
   }, [isRecording]);
 
   const fetchNotes = async (userId) => {
-    setLoading(true);
-    try {
-      let query = supabase
-        .from("notes")
-        .select("*")
-        .order("created_at", { ascending: false });
+  setLoading(true);
+  try {
+    let query = supabase
+      .from("notes")
+      .select("*")
+      .order("updated_at", { ascending: false })   // ← SORT BY UPDATED FIRST
+      .order("created_at", { ascending: false });  // ← FALLBACK ORDER
 
-      if (userId) query = query.eq("user_id", userId);
-      else query = query.is("user_id", null);
+    if (userId) query = query.eq("user_id", userId);
+    else query = query.is("user_id", null);
 
-      const { data, error } = await query;
-      if (error) throw error;
-      
-      setNotes(data || []);
-    } catch (error) {
-      console.error("Error fetching notes:", error);
-      CustomAlert.alert("Error", "Failed to fetch notes: " + error.message, [{ text: "OK" }]);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const { data, error } = await query;
+    if (error) throw error;
+
+    setNotes(data || []);
+  } catch (error) {
+    console.error("Error fetching notes:", error);
+    CustomAlert.alert("Error", "Failed to fetch notes: " + error.message, [{ text: "OK" }]);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const hasReminder = useCallback((note) => {
     if (!note) return false;
@@ -477,10 +501,15 @@ export default function Home({ navigation, route }) {
 
   const toggleComplete = async (noteId, currentStatus) => {
     try {
+      // Do NOT modify updated_at so completed notes don't move to top
       const updateData = {
-        completed: !currentStatus,
-        updated_at: new Date().toISOString()
+        completed: !currentStatus
       };
+
+      // const updateData = {
+      //   completed: !currentStatus,
+      //   updated_at: new Date().toISOString() //This causes completed notes to move to the top.
+      // };
       
       let query = supabase
         .from("notes")
@@ -768,7 +797,16 @@ export default function Home({ navigation, route }) {
         data={filteredNotes}
         keyExtractor={(item) => String(item.id)}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor="#22c55e"
+          colors={["#22c55e"]}
+        />
+      }
         renderItem={({ item }) => (
+
           // <NoteCard
           //   note={item}
           //   onToggleComplete={() => toggleComplete(item.id, item.completed)}

@@ -102,6 +102,14 @@ export default function DrawerMenu({ visible, onClose, onLogout, user }) {
       accent: "#06b6d4",
       onPress: () => handleNavigate("TimeTracking"),
     },
+    {
+      id: "archive",
+      icon: "📦",
+      title: "Archive",
+      subtitle: "Find tucked away notes",
+      accent: "#8b5cf6",
+      onPress: () => handleNavigate("Archive"),
+    },
   ];
 
   const quickActions = [
@@ -112,6 +120,14 @@ export default function DrawerMenu({ visible, onClose, onLogout, user }) {
       description: "Manage your identity",
       accent: "#3b82f6",
       onPress: () => handleNavigate("Profile"),
+    },
+    {
+      id: "completed",
+      icon: "📝",
+      label: "Completed",
+      description: "See What You Completed",
+      accent: "#ff007bff",
+      onPress: () => handleNavigate("Completed"),
     },
     {
       id: "calendar",
@@ -137,14 +153,6 @@ export default function DrawerMenu({ visible, onClose, onLogout, user }) {
     //   accent: "#38bdf8",
     //   onPress: onClose,
     // },
-    {
-      id: "archive",
-      icon: "📦",
-      label: "Archive",
-      description: "Find tucked away notes",
-      accent: "#8b5cf6",
-      onPress: () => handleNavigate("Archive"),
-    },
   ];
 
   const getUserInitials = () => {

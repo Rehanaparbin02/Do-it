@@ -72,6 +72,36 @@ export default function NoteDetailsModal({
     return formatDate(dateString);
   };
 
+  // New: helper to detect and format reminder information from note
+  const getReminderValue = (note) => {
+    if (!note) return null;
+    // check common keys used across app
+    const possible = [
+      note.reminder_at,
+      note.reminderAt,
+      note.reminder_time,
+      note.reminderTime,
+      note.reminderDate,
+      note.reminder,
+    ].filter(Boolean);
+
+    if (possible.length === 0) return null;
+
+    // Prefer full timestamp-like fields first
+    const val = possible[0];
+    try {
+      // If it's already an ISO or timestamp string, format it
+      const d = new Date(val);
+      if (!isNaN(d.getTime())) {
+        return formatDate(val);
+      }
+      // Otherwise, if it's a separate date/time pair in object/string, just return as-is
+      return String(val);
+    } catch {
+      return String(val);
+    }
+  };
+
   const openPDF = async (uri) => {
     try {
       const isAvailable = await Sharing.isAvailableAsync();
@@ -259,6 +289,7 @@ export default function NoteDetailsModal({
   if (!note) return null;
 
   const categoryData = categories[note.category] || categories['not_urgent_unimportant'];
+  const reminderDisplay = getReminderValue(note); // new reminder display value
 
   return (
     <Modal visible={visible} transparent animationType="fade">
@@ -363,6 +394,18 @@ export default function NoteDetailsModal({
                     </Text>
                   </View>
                 </View>
+
+                {/* New: Reminder display */}
+                <View style={styles.metadataItem}>
+                  <Text style={styles.metadataIcon}>⏰</Text>
+                  <View style={styles.metadataContent}>
+                    <Text style={styles.metadataLabel}>Reminder</Text>
+                    <Text style={styles.metadataValue}>
+                      {reminderDisplay ? `Reminder set at ${reminderDisplay}` : "No reminder set"}
+                    </Text>
+                  </View>
+                </View>
+
               </View>
             </View>
 
