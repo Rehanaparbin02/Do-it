@@ -1,4 +1,5 @@
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 // Screens
 import Login from "./components/Login";
@@ -16,23 +17,24 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-          <Stack.Navigator
-            initialRouteName="Login"
-            screenOptions={{
-              headerShown: false,
-            }}
-          >
-            <Stack.Screen name="Login" component={Login} />
-            <Stack.Screen name="Signup" component={SignupScreen} />
-            <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
-            <Stack.Screen name="ResetPassword" component={ResetPassword} />
-            <Stack.Screen name="Home" component={Home} />
-            <Stack.Screen name="Spaces" component={Spaces} />
-            <Stack.Screen name="Profile" component={Profile} />
-            <Stack.Screen name="PomodoroTimer" component={PomodoroTimer} />
-            <Stack.Screen name="TimeTracking" component={TimeTracking} />
-            <Stack.Screen name="CalendarView" component={CalendarView} />
-          </Stack.Navigator>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Stack.Navigator
+        initialRouteName="Login"
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Stack.Screen name="Login" component={Login} />
+        <Stack.Screen name="Signup" component={SignupScreen} />
+        <Stack.Screen name="ForgotPassword" component={ForgotPassword} />
+        <Stack.Screen name="ResetPassword" component={ResetPassword} />
+        <Stack.Screen name="Home" component={Home} />
+        <Stack.Screen name="Spaces" component={Spaces} />
+        <Stack.Screen name="Profile" component={Profile} />
+        <Stack.Screen name="PomodoroTimer" component={PomodoroTimer} />
+        <Stack.Screen name="TimeTracking" component={TimeTracking} />
+        <Stack.Screen name="CalendarView" component={CalendarView} />
+      </Stack.Navigator>
+    </GestureHandlerRootView>
   );
 }
-

@@ -324,7 +324,7 @@ export default function DrawerMenu({ visible, onClose, onLogout, user }) {
                   <Text style={styles.logoutHint}>Switch account or take a break</Text>
                 </View>
               </TouchableOpacity>
-              <Text style={styles.footerVersion}>NotesApp · v1.0.0</Text>
+              <Text style={styles.footerVersion}>NotesApp · v3.0.0</Text>
             </View>
           </ScrollView>
         </Animated.View>

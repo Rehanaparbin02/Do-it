@@ -209,7 +209,7 @@ export default function Home({ navigation, route }) {
   }, [spaces, selectedSpaceId]);
 
   const selectedSpaceLabel = useMemo(() => {
-    if (!selectedSpaceId) return "All Spaces";
+    if (!selectedSpaceId) return "Spaces";
     if (!selectedSpace) return "Selected Space";
     return selectedSpace.name || selectedSpace.title || `Space ${selectedSpace.id}`;
   }, [selectedSpaceId, selectedSpace]);
@@ -620,11 +620,12 @@ export default function Home({ navigation, route }) {
     <View>
       <View style={styles.heroSection}>
         <Text style={styles.heroTitleLine}>
-          <Text style={styles.heroTitleLight}>All The </Text>
-          <Text style={styles.heroTitleAccent}>Notes</Text>
+          <Text style={styles.heroTitleLight}>All </Text>
+          <Text style={styles.heroTitleAccent}>Notes </Text>
+          <Text style={styles.heroTitleLight}>Across</Text>
         </Text>
         <View style={styles.heroSubtitleRow}>
-          <Text style={styles.heroSubtitleText}>In</Text>
+          <Text style={styles.heroSubtitleText}>All </Text>
           <TouchableOpacity
             style={styles.heroSpaceButton}
             onPress={() => setShowSpaceModal(true)}
@@ -768,15 +769,34 @@ export default function Home({ navigation, route }) {
         keyExtractor={(item) => String(item.id)}
         showsVerticalScrollIndicator={false}
         renderItem={({ item }) => (
+          // <NoteCard
+          //   note={item}
+          //   onToggleComplete={() => toggleComplete(item.id, item.completed)}
+          //   onPress={() => handleNotePress(item)}
+          //   onLongPress={() => handleNoteLongPress(item)}
+          //   onSelectToggle={() => toggleNoteSelection(item.id)}
+          //   multiSelectMode={multiSelectMode}
+          //   selected={selectedNoteIds.includes(item.id)}
+          // />
           <NoteCard
             note={item}
             onToggleComplete={() => toggleComplete(item.id, item.completed)}
             onPress={() => handleNotePress(item)}
             onLongPress={() => handleNoteLongPress(item)}
             onSelectToggle={() => toggleNoteSelection(item.id)}
+            onArchive={(note) => {
+              // archive logic: set a flag in DB or move it
+              // e.g. update note.archived = true via supabase
+              console.log("archive", note.id);
+            }}
+            onFavorite={(note) => {
+              // favorite logic: toggle favorite flag
+              console.log("favorite", note.id);
+            }}
             multiSelectMode={multiSelectMode}
             selected={selectedNoteIds.includes(item.id)}
           />
+
         )}
         ListHeaderComponent={renderListHeader}
         ListEmptyComponent={renderListEmptyComponent}
@@ -792,13 +812,13 @@ export default function Home({ navigation, route }) {
         editingNoteId={editingNoteId}
         loading={loading}
         selectedCategory={noteFormCategory}
-        selectedSpaceId={noteFormSpaceId}
+        selectedSpaceId={noteFormSpaceId}  // ✅ Already there
         selectedSpaceLabel={noteFormSpaceLabel}
         spaces={spaces}
         onTitleChange={setTitle}
         onContentChange={setContent}
         onCategoryChange={setNoteFormCategory}
-        onSpaceChange={setNoteFormSpaceId}
+        onSpaceChange={setNoteFormSpaceId}  // ✅ ADD THIS LINE
         onSave={async () => {
           await handleSave();
           setShowFormModal(false);
@@ -1076,7 +1096,8 @@ const styles = StyleSheet.create({
     flex: 1, 
     backgroundColor: "#0a0a0a", 
     padding: 20, 
-    paddingTop: 50 
+    paddingTop: 50 ,
+    // paddingBottom: -20
   },
   centered: { 
     flex: 1, 
@@ -1128,7 +1149,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   listContent: {
-    paddingBottom: 140,
+    paddingBottom: 0,
     flexGrow: 1,
   },
   multiSelectBar: {

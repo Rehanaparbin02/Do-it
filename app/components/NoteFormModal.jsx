@@ -1,4 +1,4 @@
-// NoteFormModal.jsx
+// NoteFormModal.jsx - FIXED VERSION
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -28,10 +28,12 @@ export default function NoteFormModal({
   editingNoteId = null,
   loading = false,
   selectedCategory = null,
+  selectedSpaceId = null, // This prop from parent
   onTitleChange,
   onContentChange,
   onCategoryChange,
-  onSave, // now expects payload: ({ title, content, category, attachments, space_id })
+  onSpaceChange, // Add this prop handler
+  onSave,
   onCancel,
   onShowAttachmentModal,
 }) {
@@ -43,7 +45,12 @@ export default function NoteFormModal({
   const [localContent, setLocalContent] = useState(content || "");
   const [spaces, setSpaces] = useState([]);
   const [loadingSpaces, setLoadingSpaces] = useState(true);
-  const [selectedSpaceId, setSelectedSpaceId] = useState(null);
+  const [localSpaceId, setLocalSpaceId] = useState(selectedSpaceId);
+
+  // Sync with parent's selectedSpaceId prop
+  useEffect(() => {
+    setLocalSpaceId(selectedSpaceId);
+  }, [selectedSpaceId, visible]);
 
   useEffect(() => {
     setLocalCategory(selectedCategory || "not_urgent_unimportant");
@@ -86,42 +93,21 @@ export default function NoteFormModal({
     onCategoryChange?.(categoryId);
   };
 
-  // This function calls onSave with payload. Caller (CalendarView) will handle DB insert.
-  const handleSavePressed = async () => {
-    const payload = {
-      title: localTitle.trim() || "Untitled note",
-      content: localContent,
-      category: localCategory,
-      attachments,
-      space_id: selectedSpaceId ?? null,
-    };
+  const handleSpaceSelect = (spaceId) => {
+    setLocalSpaceId(spaceId);
+    onSpaceChange?.(spaceId); // Notify parent
+  };
 
-    // If parent provided onSave, call it and allow parent to handle DB insert
-    if (onSave) {
-      try {
-        await onSave(payload);
-      } catch (err) {
-        // bubble up error to user
-        Alert.alert("Save failed", err.message || "Could not save note");
-        return;
-      }
-    } else {
-      // fallback: insert directly if no onSave handler
-      try {
-        await supabase.from("notes").insert({
-          title: payload.title,
-          content: payload.content,
-          category: payload.category,
-          space_id: payload.space_id,
-        });
-      } catch (err) {
-        Alert.alert("Save failed", err.message || "Could not save note");
-        return;
-      }
+  const handleSavePressed = async () => {
+    if (!localTitle.trim()) {
+      Alert.alert("Validation", "Title cannot be empty.");
+      return;
     }
 
-    // Close modal after successful save
-    onCancel?.();
+    // Call parent's onSave - it already handles the DB operations
+    if (onSave) {
+      await onSave();
+    }
   };
 
   return (
@@ -172,18 +158,28 @@ export default function NoteFormModal({
                 />
               </View>
 
-              {/* Space chooser */}
+              {/* Space chooser - FIXED */}
               <View style={{ marginBottom: 18 }}>
-                <Text style={styles.inputLabel}>📂 Space</Text>
-                <View style={{ flexDirection: "row", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                <Text style={styles.inputLabel}>📁 Space</Text>
+                <ScrollView 
+                  horizontal 
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: 8, paddingVertical: 4 }}
+                >
                   <TouchableOpacity
-                    onPress={() => setSelectedSpaceId(null)}
+                    onPress={() => handleSpaceSelect(null)}
                     style={[
                       styles.spaceBadge,
-                      !selectedSpaceId && { borderColor: "#22c55e", backgroundColor: "rgba(34,197,94,0.12)" },
+                      !localSpaceId && { 
+                        borderColor: "#22c55e", 
+                        backgroundColor: "rgba(34,197,94,0.12)" 
+                      },
                     ]}
                   >
-                    <Text style={[styles.spaceBadgeText, !selectedSpaceId && { color: "#22c55e", fontWeight: "800" }]}>
+                    <Text style={[
+                      styles.spaceBadgeText, 
+                      !localSpaceId && { color: "#22c55e", fontWeight: "800" }
+                    ]}>
                       No space
                     </Text>
                   </TouchableOpacity>
@@ -191,27 +187,33 @@ export default function NoteFormModal({
                   {loadingSpaces ? (
                     <ActivityIndicator size="small" color="#22c55e" />
                   ) : spaces.length === 0 ? (
-                    <Text style={{ color: "#777" }}>No spaces found</Text>
+                    <Text style={{ color: "#777", paddingHorizontal: 8 }}>No spaces found</Text>
                   ) : (
                     spaces.map((s) => {
-                      const active = String(s.id) === String(selectedSpaceId);
+                      const active = String(s.id) === String(localSpaceId);
                       return (
                         <TouchableOpacity
                           key={s.id}
-                          onPress={() => setSelectedSpaceId(s.id)}
+                          onPress={() => handleSpaceSelect(s.id)}
                           style={[
                             styles.spaceBadge,
-                            active && { borderColor: "#22c55e", backgroundColor: "rgba(34,197,94,0.12)" },
+                            active && { 
+                              borderColor: "#22c55e", 
+                              backgroundColor: "rgba(34,197,94,0.12)" 
+                            },
                           ]}
                         >
-                          <Text style={[styles.spaceBadgeText, active && { color: "#22c55e", fontWeight: "800" }]}>
+                          <Text style={[
+                            styles.spaceBadgeText, 
+                            active && { color: "#22c55e", fontWeight: "800" }
+                          ]}>
                             {s.name}
                           </Text>
                         </TouchableOpacity>
                       );
                     })
                   )}
-                </View>
+                </ScrollView>
               </View>
 
               {/* Category */}
@@ -227,14 +229,21 @@ export default function NoteFormModal({
                         key={category.id}
                         style={[
                           styles.categoryCard,
-                          isSelected && { backgroundColor: `${category.color}20`, borderColor: category.color, borderWidth: 2 },
+                          isSelected && { 
+                            backgroundColor: `${category.color}20`, 
+                            borderColor: category.color, 
+                            borderWidth: 2 
+                          },
                         ]}
                         onPress={() => handleCategorySelect(category.id)}
                         activeOpacity={0.7}
                       >
                         <View style={styles.categoryCardContent}>
                           <Text style={styles.categoryEmoji}>{category.emoji}</Text>
-                          <Text style={[styles.categoryLabel, isSelected && { color: category.color, fontWeight: "700" }]} numberOfLines={2}>
+                          <Text style={[
+                            styles.categoryLabel, 
+                            isSelected && { color: category.color, fontWeight: "700" }
+                          ]} numberOfLines={2}>
                             {category.label}
                           </Text>
                           {isSelected && (
@@ -251,7 +260,11 @@ export default function NoteFormModal({
 
               {/* Attachments */}
               <View style={styles.attachmentSection}>
-                <TouchableOpacity activeOpacity={0.8} style={styles.attachButton} onPress={onShowAttachmentModal}>
+                <TouchableOpacity 
+                  activeOpacity={0.8} 
+                  style={styles.attachButton} 
+                  onPress={onShowAttachmentModal}
+                >
                   <Text style={styles.attachIcon}>📎</Text>
                   <View style={styles.attachTextContainer}>
                     <Text style={styles.attachText}>Add Attachment</Text>
@@ -278,7 +291,9 @@ export default function NoteFormModal({
                   {loading ? <ActivityIndicator color="#fff" size="small" /> : (
                     <>
                       <Text style={styles.saveButtonIcon}>{editingNoteId ? "💾" : "✨"}</Text>
-                      <Text style={styles.saveButtonText}>{editingNoteId ? "Update Note" : "Create Note"}</Text>
+                      <Text style={styles.saveButtonText}>
+                        {editingNoteId ? "Update Note" : "Create Note"}
+                      </Text>
                     </>
                   )}
                 </TouchableOpacity>
@@ -295,16 +310,12 @@ export default function NoteFormModal({
   );
 }
 
-/* Reuse your existing styles from the file (omitted here for brevity) */
 const styles = StyleSheet.create({
-  /* copy your existing styles from the NoteFormModal file */
-
   formModalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.96)",
     justifyContent: "flex-end",
   },
-
   formModalCard: {
     backgroundColor: "#0f0f0f",
     borderTopLeftRadius: 30,
@@ -320,9 +331,7 @@ const styles = StyleSheet.create({
     shadowRadius: 12,
     elevation: 20,
   },
-
   scrollContainer: { paddingBottom: 30 },
-
   header: {
     paddingHorizontal: 24,
     paddingTop: 24,
@@ -330,21 +339,18 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255,255,255,0.05)",
   },
-
   headerTop: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 8,
   },
-
   sectionTitle: {
     color: "#fff",
     fontWeight: "700",
     fontSize: 28,
     letterSpacing: -0.5,
   },
-
   closeButton: {
     width: 32,
     height: 32,
@@ -353,19 +359,14 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   closeButtonText: {
     color: "#ffffffff",
     fontSize: 18,
     fontWeight: "600",
   },
-
   subtitle: { color: "#666", fontSize: 14, fontWeight: "500" },
-
   formCard: { padding: 24 },
-
   inputGroup: { marginBottom: 20 },
-
   inputLabel: {
     color: "#999",
     fontSize: 13,
@@ -374,7 +375,6 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },
-
   input: {
     backgroundColor: "rgba(255,255,255,0.05)",
     color: "#fff",
@@ -384,27 +384,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
   },
-
   multiline: { height: 120, textAlignVertical: "top" },
-
   categorySection: { marginBottom: 24 },
-
   categoryTitle: {
     color: "#fff",
     fontSize: 16,
     fontWeight: "700",
     marginBottom: 4,
   },
-
   categorySubtitle: { color: "#666", fontSize: 12, marginBottom: 16 },
-
   categoriesGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
     marginBottom: 16,
   },
-
   categoryCard: {
     width: "48%",
     backgroundColor: "rgba(255,255,255,0.03)",
@@ -414,21 +408,17 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.08)",
     minHeight: 100,
   },
-
   categoryCardContent: {
     flex: 1,
     justifyContent: "space-between",
   },
-
   categoryEmoji: { fontSize: 28, marginBottom: 8 },
-
   categoryLabel: {
     color: "#ccc",
     fontSize: 12,
     fontWeight: "600",
     lineHeight: 16,
   },
-
   checkmark: {
     position: "absolute",
     top: 8,
@@ -439,15 +429,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-
   checkmarkText: {
     color: "#fff",
     fontSize: 12,
     fontWeight: "700",
   },
-
   attachmentSection: { marginBottom: 24 },
-
   attachButton: {
     backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 14,
@@ -458,20 +445,15 @@ const styles = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.08)",
     borderStyle: "dashed",
   },
-
   attachIcon: { fontSize: 24, marginRight: 12 },
-
   attachTextContainer: { flex: 1 },
-
   attachText: {
     color: "#fff",
     fontSize: 15,
     fontWeight: "600",
     marginBottom: 2,
   },
-
   attachSubtext: { color: "#666", fontSize: 12 },
-
   attachmentPreview: {
     marginTop: 12,
     backgroundColor: "rgba(34,197,94,0.08)",
@@ -480,17 +462,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(34,197,94,0.2)",
   },
-
   attachmentHeader: { marginBottom: 8 },
-
   attachmentTitle: {
     color: "#22c55e",
     fontSize: 14,
     fontWeight: "700",
   },
-
   actionButtons: { gap: 12 },
-
   saveButton: {
     backgroundColor: "#22c55e",
     borderRadius: 14,
@@ -505,16 +483,13 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-
   saveButtonIcon: { fontSize: 18 },
-
   saveButtonText: {
     color: "#fff",
     fontWeight: "700",
     fontSize: 17,
     letterSpacing: 0.3,
   },
-
   cancelButtonNew: {
     backgroundColor: "rgba(255,255,255,0.05)",
     borderRadius: 14,
@@ -523,24 +498,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
   },
-
   cancelButtonTextNew: {
     color: "#999",
     fontSize: 16,
     fontWeight: "600",
   },
-
-  /* Space badges (simple) */
   spaceBadge: {
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.08)",
-    paddingHorizontal: 12,
-    paddingVertical: 8,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
     borderRadius: 12,
-    marginRight: 8,
-    marginBottom: 8,
+    backgroundColor: "rgba(255,255,255,0.03)",
   },
-
-  spaceBadgeText: { color: "#ccc", fontWeight: "600" },
+  spaceBadgeText: { 
+    color: "#ccc", 
+    fontWeight: "600",
+    fontSize: 14,
+  },
 });
-
