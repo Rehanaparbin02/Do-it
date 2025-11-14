@@ -143,7 +143,7 @@ export default function DrawerMenu({ visible, onClose, onLogout, user }) {
       label: "Reminders",
       description: "See upcoming alerts",
       accent: "#f97316",
-      onPress: onClose,
+      onPress: () => handleNavigate("Reminders"),
     },  
     // {
     //   id: "favorites",

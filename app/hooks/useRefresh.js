@@ -1,4 +1,3 @@
-// hooks/useRefresh.js
 import { useState, useCallback } from "react";
 
 /**

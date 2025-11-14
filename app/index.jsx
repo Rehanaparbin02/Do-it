@@ -13,6 +13,7 @@ import PomodoroTimer from "./components/PomodoroTimer";
 import TimeTracking from "./components/TimeTracking";
 import CalendarView from "./components/CalendarView";
 import Completed from "./components/Completed";
+import Reminders from "./components/Reminders";
 
 const Stack = createNativeStackNavigator();
 
@@ -36,6 +37,7 @@ export default function App() {
         <Stack.Screen name="TimeTracking" component={TimeTracking} />
         <Stack.Screen name="CalendarView" component={CalendarView} />
         <Stack.Screen name="Completed" component={Completed} />
+        <Stack.Screen name="Reminders" component={Reminders} />
       </Stack.Navigator>
     </GestureHandlerRootView>
   );
