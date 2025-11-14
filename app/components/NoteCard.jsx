@@ -1,17 +1,55 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 
-export default function NoteCard({ note, onToggleComplete, onPress }) {
+export default function NoteCard({
+  note,
+  onToggleComplete,
+  onPress,
+  onLongPress,
+  onSelectToggle,
+  multiSelectMode = false,
+  selected = false,
+}) {
+  const handlePress = () => {
+    if (multiSelectMode) {
+      onSelectToggle?.();
+    } else {
+      onPress?.();
+    }
+  };
+
   return (
     <TouchableOpacity
       activeOpacity={0.9}
-      style={[styles.noteCard, note.completed && styles.completedCard]}
-      onPress={onPress}
+      style={[
+        styles.noteCard,
+        note.completed && styles.completedCard,
+        multiSelectMode && styles.multiSelectCard,
+        selected && styles.selectedCard,
+      ]}
+      onPress={handlePress}
+      onLongPress={onLongPress}
+      delayLongPress={250}
     >
+      {multiSelectMode && (
+        <View
+          style={[
+            styles.selectionIndicator,
+            selected && styles.selectionIndicatorSelected,
+          ]}
+        >
+          {selected && <Text style={styles.selectionIndicatorText}>✓</Text>}
+        </View>
+      )}
       <View style={styles.noteRow}>
         <TouchableOpacity
           onPress={onToggleComplete}
-          style={[styles.checkbox, note.completed && styles.checkboxChecked]}
+          style={[
+            styles.checkbox,
+            note.completed && styles.checkboxChecked,
+            multiSelectMode && styles.checkboxDisabled,
+          ]}
+          disabled={multiSelectMode}
         >
           {note.completed && <Text style={styles.checkmark}>✓</Text>}
         </TouchableOpacity>
@@ -54,6 +92,13 @@ const styles = StyleSheet.create({
   completedCard: { 
     opacity: 0.5 
   },
+  multiSelectCard: {
+    borderColor: "rgba(34,197,94,0.25)",
+  },
+  selectedCard: {
+    borderColor: "#22c55e",
+    backgroundColor: "rgba(34,197,94,0.12)",
+  },
   noteRow: { 
     flexDirection: "row", 
     alignItems: "center", 
@@ -72,6 +117,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#22c55e", 
     borderColor: "#22c55e" 
   },
+  checkboxDisabled: {
+    opacity: 0.4,
+  },
   checkmark: { 
     color: "#fff", 
     fontWeight: "700" 
@@ -89,5 +137,27 @@ const styles = StyleSheet.create({
   noteCompleted: { 
     textDecorationLine: "line-through", 
     color: "#666" 
+  },
+  selectionIndicator: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+    backgroundColor: "rgba(10,10,10,0.6)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  selectionIndicatorSelected: {
+    backgroundColor: "#22c55e",
+    borderColor: "#22c55e",
+  },
+  selectionIndicatorText: {
+    color: "#0a0a0a",
+    fontSize: 12,
+    fontWeight: "700",
   },
 });

@@ -97,7 +97,6 @@ export default function SearchBar({ searchQuery, onSearchChange, onClearSearch }
 const styles = StyleSheet.create({
   container: {
     marginBottom: 20,
-    marginTop: 20
   },
   searchInputContainer: {
     flexDirection: 'row',
@@ -138,15 +137,12 @@ const styles = StyleSheet.create({
     width: 36,
     height: 36,
     borderRadius: 10,
-    backgroundColor: 'rgba(34,197,94,0.1)',
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(34,197,94,0.2)',
   },
   searchIcon: {
-    fontSize: 18,
+    fontSize: 28,
   },
   searchInput: {
     flex: 1,
