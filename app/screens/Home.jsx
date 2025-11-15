@@ -190,14 +190,41 @@ export default function Home({ navigation, route }) {
     return () => clearInterval(interval);
   }, [isRecording]);
 
-  const fetchNotes = async (userId) => {
+//   const fetchNotes = async (userId) => {
+//   setLoading(true);
+//   try {
+//     let query = supabase
+//       .from("notes")
+//       .select("*")
+//       .order("updated_at", { ascending: false })   // ← SORT BY UPDATED FIRST
+//       .order("created_at", { ascending: false });  // ← FALLBACK ORDER
+
+//     if (userId) query = query.eq("user_id", userId);
+//     else query = query.is("user_id", null);
+
+//     const { data, error } = await query;
+//     if (error) throw error;
+
+//     setNotes(data || []);
+//   } catch (error) {
+//     console.error("Error fetching notes:", error);
+//     CustomAlert.alert("Error", "Failed to fetch notes: " + error.message, [{ text: "OK" }]);
+//   } finally {
+//     setLoading(false);
+//   }
+// };
+
+// The fetchNotes function now excludes archived notes with .eq("archived", false)
+
+const fetchNotes = async (userId) => {
   setLoading(true);
   try {
     let query = supabase
       .from("notes")
       .select("*")
-      .order("updated_at", { ascending: false })   // ← SORT BY UPDATED FIRST
-      .order("created_at", { ascending: false });  // ← FALLBACK ORDER
+      .eq("archived", false)  // ✅ EXCLUDE archived notes from Home
+      .order("updated_at", { ascending: false })
+      .order("created_at", { ascending: false });
 
     if (userId) query = query.eq("user_id", userId);
     else query = query.is("user_id", null);
@@ -213,7 +240,6 @@ export default function Home({ navigation, route }) {
     setLoading(false);
   }
 };
-
 
   const hasReminder = useCallback((note) => {
     if (!note) return false;
@@ -315,6 +341,95 @@ export default function Home({ navigation, route }) {
 
     previousSelectedSpaceIdRef.current = selectedSpaceId;
   }, [selectedSpaceId, multiSelectMode, handleCancelMultiSelect]);
+
+
+const handleArchiveNote = async (note) => {
+  try {
+    // Update the note to set archived = true
+    const updateData = { 
+      archived: true,
+      updated_at: new Date().toISOString()
+    };
+    
+    let query = supabase
+      .from("notes")
+      .update(updateData)
+      .eq("id", note.id);
+    
+    if (user) query = query.eq("user_id", user.id);
+    else query = query.is("user_id", null);
+
+    const { error } = await query;
+    if (error) throw error;
+
+    // Update local state immediately - remove from current view
+    setNotes((prev) => prev.filter((n) => n.id !== note.id));
+
+    // Show success message
+    CustomAlert.alert(
+      "Archived", 
+      `"${note.title || "Note"}" moved to archive.`, 
+      [{ text: "OK" }]
+    );
+    
+    // Refresh from database to ensure sync
+    await fetchNotes(user?.id);
+  } catch (err) {
+    console.error("Error archiving note:", err);
+    CustomAlert.alert("Error", err.message || "Failed to archive note.", [
+      { text: "OK" }
+    ]);
+    // Refresh on error
+    await fetchNotes(user?.id);
+  }
+};
+
+const handleFavoriteNote = async (note) => {
+  try {
+    // Toggle favorite status
+    const newFavoriteStatus = !note.favorite;
+    
+    const updateData = { 
+      favorite: newFavoriteStatus,
+      updated_at: new Date().toISOString()
+    };
+    
+    let query = supabase
+      .from("notes")
+      .update(updateData)
+      .eq("id", note.id);
+    
+    if (user) query = query.eq("user_id", user.id);
+    else query = query.is("user_id", null);
+
+    const { data, error } = await query.select();
+    if (error) throw error;
+
+    // Update local state immediately
+    if (data && data.length > 0) {
+      setNotes((prev) =>
+        prev.map((n) => (n.id === note.id ? data[0] : n))
+      );
+    }
+
+    // Show success message
+    CustomAlert.alert(
+      newFavoriteStatus ? "Favorited" : "Unfavorited",
+      `"${note.title || "Note"}" ${newFavoriteStatus ? 'added to' : 'removed from'} favorites.`,
+      [{ text: "OK" }]
+    );
+    
+    // Refresh from database to ensure sync
+    await fetchNotes(user?.id);
+  } catch (err) {
+    console.error("Error toggling favorite:", err);
+    CustomAlert.alert("Error", err.message || "Failed to update favorite status.", [
+      { text: "OK" }
+    ]);
+    // Refresh on error
+    await fetchNotes(user?.id);
+  }
+};
 
   const handleDeleteSelectedNotes = useCallback(() => {
     if (selectedNoteIds.length === 0) return;
@@ -807,32 +922,17 @@ export default function Home({ navigation, route }) {
       }
         renderItem={({ item }) => (
 
-          // <NoteCard
-          //   note={item}
-          //   onToggleComplete={() => toggleComplete(item.id, item.completed)}
-          //   onPress={() => handleNotePress(item)}
-          //   onLongPress={() => handleNoteLongPress(item)}
-          //   onSelectToggle={() => toggleNoteSelection(item.id)}
-          //   multiSelectMode={multiSelectMode}
-          //   selected={selectedNoteIds.includes(item.id)}
-          // />
           <NoteCard
             note={item}
             onToggleComplete={() => toggleComplete(item.id, item.completed)}
             onPress={() => handleNotePress(item)}
             onLongPress={() => handleNoteLongPress(item)}
             onSelectToggle={() => toggleNoteSelection(item.id)}
-            onArchive={(note) => {
-              // archive logic: set a flag in DB or move it
-              // e.g. update note.archived = true via supabase
-              console.log("archive", note.id);
-            }}
-            onFavorite={(note) => {
-              // favorite logic: toggle favorite flag
-              console.log("favorite", note.id);
-            }}
+            onArchive={handleArchiveNote}
+            onFavorite={handleFavoriteNote}
             multiSelectMode={multiSelectMode}
             selected={selectedNoteIds.includes(item.id)}
+            isArchived={false}  // ✅ Home screen shows non-archived notes
           />
 
         )}
@@ -1133,7 +1233,7 @@ const styles = StyleSheet.create({
   container: { 
     flex: 1, 
     backgroundColor: "#0a0a0a", 
-    padding: 20, 
+    padding: 10, 
     paddingTop: 50 ,
     // paddingBottom: -20
   },
@@ -1238,7 +1338,7 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   heroSection: {
-    marginBottom: 80,
+    marginBottom: 50,
     position: 'relative',
     top: 25,
   },
@@ -1247,7 +1347,7 @@ const styles = StyleSheet.create({
     color: "#fff",
     letterSpacing: -0.5,
     position: 'relative',
-    marginBottom: 5,
+    // marginBottom: 5,
   },
   heroTitleLight: {
     fontStyle: 'Inter',
@@ -1295,7 +1395,7 @@ const styles = StyleSheet.create({
   },
   heroCountText: {
     position: 'relative',
-    top: 35,
+    top: 0,
     color: "#facc15",
     fontSize: 50,
     fontWeight: "700",

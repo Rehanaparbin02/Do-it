@@ -10,7 +10,7 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { Audio } from "expo-av";
+import { Audio } from "expo-audio";
 
 export default function PomodoroTimer({ navigation }) {
   const [focusMinutes, setFocusMinutes] = useState(25);

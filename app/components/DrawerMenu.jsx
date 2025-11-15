@@ -145,14 +145,14 @@ export default function DrawerMenu({ visible, onClose, onLogout, user }) {
       accent: "#f97316",
       onPress: () => handleNavigate("Reminders"),
     },  
-    // {
-    //   id: "favorites",
-    //   label: "Favorites",
-    //   description: "Pinned for quick access",
-    //   icon: "⭐",
-    //   accent: "#38bdf8",
-    //   onPress: onClose,
-    // },
+    {
+      id: "favorites",
+      label: "Favorites",
+      description: "Pinned for quick access",
+      icon: "⭐",
+      accent: "#38bdf8",
+      onPress: () => handleNavigate("Favorites"),
+    },
   ];
 
   const getUserInitials = () => {
@@ -293,18 +293,18 @@ export default function DrawerMenu({ visible, onClose, onLogout, user }) {
                 <TouchableOpacity
                   style={styles.settingsCard}
                   activeOpacity={0.85}
-                  onPress={onClose}
+                  onPress={() => navigation.navigate('Settings')}
                 >
                   <Text style={styles.settingsIcon}>⚙️</Text>
                   <View>
-                    <Text style={styles.settingsTitle}>Preferences</Text>
+                    <Text style={styles.settingsTitle}>Settings</Text>
                     <Text style={styles.settingsSubtitle}>Theme, notifications, privacy</Text>
                   </View>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.settingsCard}
                   activeOpacity={0.85}
-                  onPress={onClose}
+                  onPress={() => navigation.navigate('Help&Support')}
                 >
                   <Text style={styles.settingsIcon}>❓</Text>
                   <View>

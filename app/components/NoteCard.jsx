@@ -1,3 +1,9 @@
+// Archived.jsx - Key Updates
+// 1. Filter to show ONLY archived notes (archived: true)
+// 2. Pass isArchived={true} to NoteCard
+// 3. Pass onUnarchive and onDelete handlers
+// 4. Add multi-select functionality for bulk delete
+
 // NoteCard.jsx
 import React, { useRef } from "react";
 import {
@@ -18,10 +24,13 @@ export default function NoteCard({
   onPress,
   onLongPress,
   onSelectToggle,
-  onArchive, // (note) => {}
-  onFavorite, // (note) => {}
+  onArchive, // (note) => {} - handles archive action
+  onUnarchive, // (note) => {} - handles unarchive/restore action
+  onFavorite, // (note) => {} - handles favorite action
+  onDelete, // (note) => {} - handles delete action
   multiSelectMode = false,
   selected = false,
+  isArchived = false, // determines if we're in archived view
 }) {
   const swipeableRef = useRef(null);
 
@@ -47,13 +56,12 @@ export default function NoteCard({
     return false;
   };
 
-  // Animated Left action (swipe right) - Archive
+  // Animated Left action (swipe right) - Archive/Restore
   const renderLeftActions = (progress, dragX) => {
-    // progress is an Animated node between 0 and 1
     const translateX = progress.interpolate
       ? progress.interpolate({
           inputRange: [0, 1],
-          outputRange: [-40, 0], // starts further left, moves to 0
+          outputRange: [-40, 0],
           extrapolate: "clamp",
         })
       : new Animated.Value(0);
@@ -86,29 +94,36 @@ export default function NoteCard({
       >
         <Pressable
           onPress={() => {
-            // Close first, then call archive after a short delay to allow the close animation
             const didClose = closeSwipeable();
             const delay = didClose ? 220 : 0;
             setTimeout(() => {
-              onArchive?.(note);
+              if (isArchived) {
+                onUnarchive?.(note);
+              } else {
+                onArchive?.(note);
+              }
             }, delay);
           }}
-          style={[styles.actionContainer, styles.archiveAction]}
+          style={[
+            styles.actionContainer,
+            isArchived ? styles.unarchiveAction : styles.archiveAction,
+          ]}
           android_ripple={{ color: "rgba(255,255,255,0.06)" }}
         >
-          {/* <Text style={styles.actionEmoji}>🗄️</Text> */}
-          <Text style={styles.actionText}>Archive</Text>
+          <Text style={styles.actionText}>
+            {isArchived ? "Restore" : "Archive"}
+          </Text>
         </Pressable>
       </Animated.View>
     );
   };
 
-  // Animated Right action (swipe left) - Favorite
+  // Animated Right action (swipe left) - Favorite/Delete
   const renderRightActions = (progress, dragX) => {
     const translateX = progress.interpolate
       ? progress.interpolate({
           inputRange: [0, 1],
-          outputRange: [40, 0], // starts further right, moves to 0
+          outputRange: [40, 0],
           extrapolate: "clamp",
         })
       : new Animated.Value(0);
@@ -144,14 +159,22 @@ export default function NoteCard({
             const didClose = closeSwipeable();
             const delay = didClose ? 220 : 0;
             setTimeout(() => {
-              onFavorite?.(note);
+              if (isArchived) {
+                onDelete?.(note);
+              } else {
+                onFavorite?.(note);
+              }
             }, delay);
           }}
-          style={[styles.actionContainerfav, styles.favoriteAction]}
+          style={[
+            styles.actionContainerfav,
+            isArchived ? styles.deleteAction : styles.favoriteAction,
+          ]}
           android_ripple={{ color: "rgba(255,255,255,0.06)" }}
         >
-          {/* <Text style={styles.actionEmoji}>⭐</Text> */}
-          <Text style={styles.actionText}>Favorite</Text>
+          <Text style={styles.actionText}>
+            {isArchived ? "Delete" : "Favorite"}
+          </Text>
         </Pressable>
       </Animated.View>
     );
@@ -174,6 +197,7 @@ export default function NoteCard({
           note.completed && styles.completedCard,
           multiSelectMode && styles.multiSelectCard,
           selected && styles.selectedCard,
+          isArchived && styles.archivedCard,
         ]}
         onPress={handlePress}
         onLongPress={onLongPress}
@@ -187,6 +211,11 @@ export default function NoteCard({
             ]}
           >
             {selected && <Text style={styles.selectionIndicatorText}>✓</Text>}
+          </View>
+        )}
+        {isArchived && (
+          <View style={styles.archivedBadge}>
+            {/* <Text style={styles.archivedBadgeText}>📦</Text> */}
           </View>
         )}
         <View style={styles.noteRow}>
@@ -240,7 +269,12 @@ const styles = StyleSheet.create({
   },
   completedCard: {
     backgroundColor: "rgba(1, 20, 4, 1)",
-    opacity:1,
+    opacity: 1,
+  },
+  archivedCard: {
+    backgroundColor: "rgba(26, 20, 10, 1)",
+    borderColor: "rgba(245,158,11,0.2)",
+    opacity: 0.9,
   },
   multiSelectCard: {
     borderColor: "rgba(34,197,94,0.25)",
@@ -310,6 +344,19 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: "700",
   },
+  archivedBadge: {
+    position: "absolute",
+    top: 14,
+    right: 14,
+    width: 24,
+    height: 24,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  archivedBadgeText: {
+    fontSize: 16,
+    opacity: 0.7,
+  },
 
   /* wrappers so we can animate the whole action block */
   actionWrapperLeft: {
@@ -327,7 +374,7 @@ const styles = StyleSheet.create({
   actionContainer: {
     width: 100,
     height: 50,
-    position:'relative',
+    position: "relative",
     top: -6,
     borderRadius: 14,
     justifyContent: "center",
@@ -335,12 +382,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 8,
     marginVertical: 6,
-    marginRight: 10
+    marginRight: 10,
   },
   actionContainerfav: {
     width: 100,
     height: 50,
-    position:'relative',
+    position: "relative",
     top: -6,
     borderRadius: 14,
     justifyContent: "center",
@@ -348,23 +395,29 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 8,
     marginVertical: 6,
-    marginLeft: 10
+    marginLeft: 10,
   },
   archiveAction: {
     backgroundColor: "rgba(218, 110, 2, 0.81)",
-    borderColor: "rgba(148,163,184,0.18)",
+    borderColor: "rgba(249, 206, 175, 0.58)",
+    borderWidth: 1,
+  },
+  unarchiveAction: {
+    backgroundColor: "rgba(34, 197, 94, 0.81)",
+    borderColor: "rgba(134, 239, 172, 0.58)",
     borderWidth: 1,
   },
   favoriteAction: {
     backgroundColor: "rgba(250, 204, 21, 0.8)",
-    borderColor: "rgba(250,204,21,0.18)",
+    borderColor: "rgba(245, 232, 179, 0.8)",
+    borderWidth: 1,
+  },
+  deleteAction: {
+    backgroundColor: "rgba(239, 68, 68, 0.81)",
+    borderColor: "rgba(252, 165, 165, 0.58)",
     borderWidth: 1,
   },
 
-  // actionEmoji: {
-  //   fontSize: 22,
-  //   marginBottom: 6,
-  // },
   actionText: {
     color: "#fff",
     fontSize: 20,
