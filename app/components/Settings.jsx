@@ -350,7 +350,7 @@ export default function Settings({ navigation }) {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>⚙️ Preferences</Text>
           
-          <SettingItem
+          {/* <SettingItem
             icon="🌙"
             title="Dark Mode"
             subtitle="Currently enabled"
@@ -362,7 +362,7 @@ export default function Settings({ navigation }) {
                 thumbColor={darkMode ? "#fff" : "#f4f3f4"}
               />
             }
-          />
+          /> */}
           
           <SettingItem
             icon="🔔"
@@ -378,7 +378,7 @@ export default function Settings({ navigation }) {
             }
           />
           
-          <SettingItem
+          {/* <SettingItem
             icon="📦"
             title="Auto Archive"
             subtitle="Archive completed notes automatically"
@@ -404,7 +404,7 @@ export default function Settings({ navigation }) {
                 thumbColor={compactView ? "#fff" : "#f4f3f4"}
               />
             }
-          />
+          /> */}
         </View>
 
         {/* Data Management Section */}
@@ -448,11 +448,11 @@ export default function Settings({ navigation }) {
             onPress={() => CustomAlert.alert("Privacy", "Privacy Policy would be displayed here", [{ text: "OK" }])}
           />
           
-          <SettingItem
+          {/* <SettingItem
             icon="💬"
             title="Help & Support"
             onPress={() => CustomAlert.alert("Support", "Contact support@notesapp.com for help", [{ text: "OK" }])}
-          />
+          /> */}
         </View>
 
         {/* Account Actions Section */}
